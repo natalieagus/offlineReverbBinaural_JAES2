@@ -33,20 +33,23 @@ typedef struct Gains{
     
     }
     //Constructor with arguments
-    Gains(float dmin, int numberDelays, float totalSurfaceArea, float* feedbackTapGains){
+    Gains(float dmin, int numberDelays, float totalSurfaceArea, float* feedbackTapGains, float RT60, float totalVolume){
         this->dmin = dmin ;
         this->numberDelays = numberDelays;
         this->totalSurfaceArea = totalSurfaceArea;
         this->totalInputEnergy = 0.f;
         this->correctInputEnergy = 4.f * M_PI * powf(dmin, 2) * ENERGYINITIAL;
         this->feedbackTapGains = feedbackTapGains;
+        
+        //sabine's equation
+        this->absorptionCoefficient = 0.1611f * totalVolume / (RT60 * this->totalSurfaceArea);
     };
     
     
     
     //methods
     float calculateGains(Plane3D* surfaces, Vector3D L, Vector3D S);
-    
+    float absorptionCoefficient;
 
     void monteCarloUpsilon(Vector3D* points, Vector3D L, Vector3D S, Vector3D N, int numPoints, float* up, float area);
     void monteCarloBeta(Vector3D* points, Vector3D L, Vector3D S, Vector3D N, int numPoints, float* beta, float area);

@@ -25,23 +25,31 @@ using namespace std;
 //
 
 
-void saveImpulse(int type, int samples, std::ofstream* of){
+void saveImpulse(int type, int samples, std::ofstream* ofLeft, std::ofstream* ofRight){
     
 //    clock_t begin = clock();
-    std::string filename = "impulse";
-    if (type > 0) filename += "H";
-    else filename += "C";
-    filename += std::to_string(abs(type));
-    filename += ".csv";
+    std::string filenameL = "impulse";
+    if (type > 0) filenameL += "H";
+    else filenameL += "C";
+    filenameL += std::to_string(abs(type));
+    filenameL += "Left.csv";
+    
+    std::string filenameR = "impulse";
+    if (type > 0) filenameR += "H";
+    else filenameR += "C";
+    filenameR += std::to_string(abs(type));
+    filenameR += "Right.csv";
     
     
-    of->open(filename);
+    ofLeft->open(filenameL);
+    ofRight->open(filenameR);
     
     FDN reverb = FDN(type);
-    reverb.impulseResponse(samples, of, of);
+    reverb.impulseResponse(samples, ofLeft, ofRight);
     
     std::cout << "impulse saved for type " << type << ".\n";
-    of->close();
+    ofLeft->close();
+    ofRight->close();
 //    
 //    clock_t end = clock();
 //    double elapsed_msecs = double(end - begin) / CLOCKS_PER_SEC * 1000.f;
@@ -55,7 +63,8 @@ int main(int argc, char* argv[])
 {
     float impulseLength = 5.0f;
     
-    std::ofstream impulse;
+    std::ofstream impulseLeft;
+    std::ofstream impulseRight;
     std::ifstream inFile;
     
     //float time = 500.0f; // seconds of reverb
@@ -93,7 +102,7 @@ int main(int argc, char* argv[])
 //        printf("Tyles : %d \n", type);
 ////        saveImpulse(type, FS*impulseLength, &impulse);
 //    }
-    saveImpulse(16, FS*impulseLength, &impulse);
+    saveImpulse(16, FS*impulseLength, &impulseLeft, &impulseRight);
     // save impuses for C types
 //    saveImpulse(-20, FS*impulseLength, &impulse);
     //saveImpulse(-52, FS*impulseLength, &impulse);

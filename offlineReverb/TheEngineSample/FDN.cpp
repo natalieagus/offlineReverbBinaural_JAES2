@@ -18,34 +18,34 @@ void FDN::impulseResponse(long numSamples, std::ofstream* outputFileLeft, std::o
     
     clock_t begin = clock();
     
-//    float input;
-//    
-//    float zero = 0.0f;
-//    float one = 1.0f;
-//    float left, right;
-//    
-//    
-//    /*
-//     *  Gain model on: ER and diffusion run in parallel, diffusion output to the
-//     *  FDN input.
-//     */
-//
-//    
-//    for (int i = 0; i < numSamples; i++){
-//        input = i==0 ? one : zero;
-//        processReverb(&input, &left, &right);
-//        *outputFileLeft << left << ",";
-//        *outputFileRight << right << ",";
-//        
-//    }
-//    
-//    clock_t end = clock();
-//    double elapsed_msecs = double(end - begin) / CLOCKS_PER_SEC * 1000.f;
-//    time_elapsed_msecs += elapsed_msecs;
-//    printf("Time elapsed: %f ms\n", time_elapsed_msecs);
-//    
-    *outputFileLeft << "Testing left\n";
-    *outputFileRight << "Testing right\n";
+    float input;
+    
+    float zero = 0.0f;
+    float one = 1.0f;
+    float left, right;
+    
+    
+    /*
+     *  Gain model on: ER and diffusion run in parallel, diffusion output to the
+     *  FDN input.
+     */
+
+    
+    for (int i = 0; i < numSamples; i++){
+        input = i==0 ? one : zero;
+        processReverb(&input, &left, &right);
+        *outputFileLeft << left << ",";
+        *outputFileRight << right << ",";
+        
+    }
+    
+    clock_t end = clock();
+    double elapsed_msecs = double(end - begin) / CLOCKS_PER_SEC * 1000.f;
+    time_elapsed_msecs += elapsed_msecs;
+    printf("Time elapsed: %f ms\n", time_elapsed_msecs);
+    
+    *outputFileLeft << "\n";
+    *outputFileRight << "\n";
 }
 
 
@@ -56,7 +56,7 @@ void FDN::setParameterSafe(Parameter params)
     
     
     parametersFDN = newParametersFDN;
-    reverbOn = parametersFDN.roomSize > 0.05;
+    reverbOn = parametersFDN.roomWidth > 0.05;
     
     printf("RT60: %f, room width : %f, room length : %f roomHeight: %f\n", parametersFDN.RT60, parametersFDN.roomWidth, parametersFDN.roomHeight, parametersFDN.roomCeiling);
     printf("Listenerloc : %f %f ssloc : %f %f \n", parametersFDN.listenerLoc.x, parametersFDN.listenerLoc.y, parametersFDN.soundSourceLoc.x, parametersFDN.soundSourceLoc.y);
@@ -79,7 +79,7 @@ void FDN::setParameterSafe(Parameter params)
     
     printf("Room elements %d \n", Room.elements);
     resetTapAttenuation(parametersFDN.RT60);
-    GainValues = Gains(DMIN, Room.elements, Room.area, feedbackTapGains);
+    GainValues = Gains(DMIN, Room.elements, Room.area, feedbackTapGains, parametersFDN.RT60, Room.volume);
     
     GainValues.brdfPhong = BRDFenergy;
     
@@ -1149,7 +1149,7 @@ void FDN::setDelayNoOutputLength(){
     //Set delay length for delay-without-output
     std::random_device rd;     // only used once to initialise (seed) engine
     std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
-    std::uniform_int_distribution<int> uni(50, ROOMCEILING/SOUNDSPEED * SAMPLE_RATE_F); // guaranteed unbiased
+    std::uniform_int_distribution<int> uni(50, parametersFDN.roomCeiling/SOUNDSPEED * SAMPLE_RATE_F); // guaranteed unbiased
     
     
     

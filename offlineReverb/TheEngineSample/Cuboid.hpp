@@ -40,6 +40,8 @@ typedef struct Cuboid{
         this->xLength = 1;
         this->yLength = 1;
         this->zLength = 1;
+        
+        this->volume = xLength * yLength * zLength;
     }
     
     Cuboid(float xLength, float yLength, float zLength){
@@ -65,6 +67,8 @@ typedef struct Cuboid{
         this->xLength = xLength;
         this->yLength = yLength;
         this->zLength = zLength;
+        
+        volume = this->xLength * this->yLength * this->zLength;
     }
     
     void segmentCube(int tilesPerSide);
@@ -97,6 +101,7 @@ typedef struct Cuboid{
     int elements;
     float area;
     int dimensions;
+    float volume;
     
     
 } Cuboid;
