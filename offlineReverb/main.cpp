@@ -20,8 +20,9 @@ using std::fstream;
 using std::string;
 using namespace std;
 
-
-
+//
+//first commit
+//
 
 
 void saveImpulse(int type, int samples, std::ofstream* of){
