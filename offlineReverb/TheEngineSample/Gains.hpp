@@ -15,13 +15,13 @@
 #include "Cuboid.hpp"
 #include <math.h>
 #include <stdio.h>
-#import "energyTerm.hpp"
+//#import "energyTerm.hpp"
 
 
-#define DMIN 0.5f
+#define DMIN 0.2f
 
 //change them to make the first order reflections lose energy if you have to.
-#define NUM_MONTECARLO 20
+#define NUM_MONTECARLO 50
 #define KD 1.0f
 #define KS 0.0f
 #define ENERGYINITIAL 1.0f
@@ -59,15 +59,14 @@ typedef struct Gains{
     float pointCollectionFunction(Vector3D x, Vector3D L, Vector3D N, float visibility, float absorption);
     float reflectionKernel(Vector3D x, Vector3D L, Vector3D S, Vector3D N, float visibility);
     Vector3D Lambda(Vector3D u, Vector3D x);
-    float phongBRDF(Vector3D S, Vector3D L, Vector3D N);
+//    float phongBRDF(Vector3D S, Vector3D L, Vector3D N);
     void getGains(float* inputGains, float* outputGains);
     
 
     
     void cartesianToSpherical(Vector3D x, float* angles);
-    Vector3D getDirectionVector(Vector3D S, Vector3D N);
     
-    float lookUpNormalizationEnergyTerm(Vector3D S);
+//    float lookUpNormalizationEnergyTerm(Vector3D S);
     
     //variables
     float dmin;
@@ -83,7 +82,7 @@ typedef struct Gains{
     float totalInputEnergy;
     float correctInputEnergy;
     
-    energyTerm brdfPhong;
+//    energyTerm brdfPhong;
     
     
 }Gains;

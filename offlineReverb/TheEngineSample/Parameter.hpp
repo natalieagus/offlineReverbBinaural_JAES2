@@ -39,10 +39,11 @@
 
 
 
-
+//#define ENERGY_BALANCE
 
 typedef struct Parameter {
     
+
     //Initial values of parameter
     Parameter(){
 //        this->roomSize = INITIALROOMSIZE * ROOMSIZE;
@@ -69,22 +70,27 @@ typedef struct Parameter {
         this->roomRayModelOn = true;
 //        this->reflection = 0.95f;
 
+        this->orientation = 0.0f;
+        
+        
+//WATCH DMIN AND ENERGY DETECTED BY LISTENER
         
         //offline Version
-        this->RT60 = 1.2f;
-        this->roomWidth = 4.0f; //x
-        this->roomHeight = 4.0f; //y
-        this->roomCeiling = 4.0f; //z
-        this->listenerLoc = Vector3D(2.0f, 2.0f, 2.0f);
-        this->soundSourceLoc = Vector3D(1.0f, 1.0f, 1.0f);
+        this->RT60 = 3.4f;
+        this->roomWidth = 10.f; //x
+        this->roomHeight = 16.f; //y
+        this->roomCeiling = 4.3f; //z
+        this->listenerLoc =Vector3D(5.f, 6.25f, 0.3f);
+        this->soundSourceLoc =  Vector3D(5.f, 9.5f,0.3f);
+        
 
-        this->listenerLocLeftEar.x = this->listenerLoc.x - RADIUSOFHEAD;
-        this->listenerLocLeftEar.y = this->listenerLoc.y;
-        this->listenerLocRightEar.x = this->listenerLoc.x + RADIUSOFHEAD;
-        this->listenerLocRightEar.y = this->listenerLoc.y;
         
+        this->listenerLocLeftEar = Vector3D(cosf(orientation * M_PI / 180.f)*(- RADIUSOFHEAD) + sinf(orientation * M_PI / 180.f)*0.0f + listenerLoc.x, cosf(orientation * M_PI / 180.f)*0.0f-sinf(orientation * M_PI / 180.f)*(- RADIUSOFHEAD) + listenerLoc.y, listenerLoc.z);
         
-        
+        this->listenerLocRightEar =  Vector3D(cosf(orientation * M_PI / 180.f)*(+ RADIUSOFHEAD) + sinf(orientation * M_PI / 180.f)*0.0f + listenerLoc.x, cosf(orientation * M_PI / 180.f)*0.0f-sinf(orientation * M_PI / 180.f)*(+ RADIUSOFHEAD) + listenerLoc.y, listenerLoc.z);;
+
+        printf("left ear: %f %f %f \n", listenerLocLeftEar.x,listenerLocLeftEar.y, listenerLocLeftEar.z);
+         printf("right ear: %f %f %f \n", listenerLocRightEar.x,listenerLocRightEar.y, listenerLocRightEar.z);
       //  printf("RT60: %f, room width : %f, room length : %f\n", this->RT60, this->roomWidth, this->roomHeight);
        // printf("Listenerloc : %f %f ssloc : %f %f \n", this->listenerLoc.x, this->listenerLoc.y, this->soundSourceLoc.x, this->soundSourceLoc.y);
         
@@ -105,6 +111,7 @@ typedef struct Parameter {
     Vector3D listenerLocRightEar;
     Vector3D soundSourceLoc;
     
+    float orientation;
 //    float roomSizeRatio;
     float RT60;
 //    float roomSize;

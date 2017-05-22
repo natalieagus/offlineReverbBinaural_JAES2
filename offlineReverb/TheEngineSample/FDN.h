@@ -48,7 +48,7 @@ using namespace std;
 #import "SingleTapDelay.h"
 #import "Vector3D.hpp"
 #import "Parameter.hpp"
-#import "energyTerm.hpp"
+//#import "energyTerm.hpp"
 
 
 class FDN
@@ -60,7 +60,7 @@ public:
     
     // constructor
 	FDN(void);
-    FDN(bool powerSaveMode); // call this with powerSaveMode set to true for a more efficient reverb with lower quality sound.
+//    FDN(bool powerSaveMode); // call this with powerSaveMode set to true for a more efficient reverb with lower quality sound.
     ~FDN();
     
     // processes a buffer with numFrames samples.  mono in, stereo out.
@@ -73,6 +73,8 @@ public:
     void processReverb(float* pInput, float* pOutputL, float* pOutputR);
     
 protected:
+    
+    float listenerOrientation;
     
     double time_elapsed_msecs = 0.0f;
     
@@ -91,9 +93,10 @@ protected:
     float firstOrderReflectionAttenuation[TOTALDELAYS-SMOOTHDELAY];
     
     float totalEnergyAfterAttenuation;
-    energyTerm BRDFenergy;
+//    energyTerm BRDFenergy;
     
     BMMultiTapDelay multiTapDelay;
+    
     //Setup multiTapDelay values
     size_t indicesL[TOTALDELAYS/2];
     size_t indicesR[0];
@@ -122,7 +125,7 @@ protected:
     void configureRoomRayModel();
     
     Parameter parametersFDN;
-    Parameter newParametersFDN;
+//    Parameter newParametersFDN;
     void setParameterSafe(Parameter params);
     
     void setDelayNoOutputLength();
@@ -135,10 +138,10 @@ protected:
     void setTempPoints();
     Vector3D tempPoints[CHANNELS];
     void calculateAdditionalDelays();
-    float additionalDelays[8];
-    SingleTapDelay reverbDelays[8];
+    float additionalDelays[CHANNELS];
+    SingleTapDelay reverbDelays[CHANNELS];
     void addReverbDelay(float* fdnLeft, float*fdnRight);
-    void setDelayTimes();
+//    void setDelayTimes();
 
     
     //To handle direct Rays
@@ -146,12 +149,12 @@ protected:
     void setDirectSingleTapDelay();
     void setDirectGains();
     void setDirectDelayTimes();
-    void processDirectRays(float* input, float* directRaysOutput);
+    void processDirectRaysDelay(float* input, float* directRaysOutput);
     
     //To do channel angle calculations
     void setDelayChannels();
     void setDirectRayAngles();
-    size_t determineChannel(float x, float y);
+    size_t determineChannel(float x, float y, float orientation);
     size_t angleToChannel(float angleInDegrees);
     float channelToAngle(size_t channel);
     float channeltoangleNormal(size_t channel);
@@ -166,7 +169,7 @@ protected:
     //Direct ray is inclusive in one of the channels, so there's no need to have another channel angle for this
     float directRayAngles[2];
     //process the fdntankout[channels]
-    void filterChannels(float fdnTankOut[CHANNELS], float directRay[2], float fdnTankOutLeft[CHANNELS], float fdnTankOutRight[CHANNELS]);
+    void filterChannelsHRTF(float fdnTankOut[CHANNELS], float directRay[2], float fdnTankOutLeft[CHANNELS], float fdnTankOutRight[CHANNELS]);
     
  
     // delay buffers
@@ -191,7 +194,7 @@ protected:
     double gain(double rt60, double delayLengthInSamples);
 
     // variables for generating random numbers
-	int rand, randomSeed;
+	int  rands,randomSeed;
 
 	// we keep buffer one sample of input in an array so that we can keep a pointer to each input for
 	// fast summing of feedback output.  This avoids calculating the array index of the 

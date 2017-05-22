@@ -11,7 +11,6 @@
 		2CFBA73E1EB77B4D001A595E /* TPCircularBuffer+AudioBufferList.c in Sources */ = {isa = PBXBuildFile; fileRef = 2CFBA73B1EB77B4D001A595E /* TPCircularBuffer+AudioBufferList.c */; };
 		2CFBA7AF1EB783E0001A595E /* BMMultiTapDelay.c in Sources */ = {isa = PBXBuildFile; fileRef = 2CFBA7861EB783E0001A595E /* BMMultiTapDelay.c */; };
 		2CFBA7B01EB783E0001A595E /* Cuboid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CFBA7891EB783E0001A595E /* Cuboid.cpp */; };
-		2CFBA7B21EB783E0001A595E /* DoubleBufferedReverb.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CFBA78D1EB783E0001A595E /* DoubleBufferedReverb.cpp */; };
 		2CFBA7B31EB783E0001A595E /* energyTerm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CFBA78F1EB783E0001A595E /* energyTerm.cpp */; };
 		2CFBA7B51EB783E0001A595E /* FirstOrderFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CFBA7931EB783E0001A595E /* FirstOrderFilter.cpp */; };
 		2CFBA7B61EB783E0001A595E /* FourthOrderFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CFBA7951EB783E0001A595E /* FourthOrderFilter.cpp */; };
@@ -52,8 +51,6 @@
 		2CFBA7881EB783E0001A595E /* Constants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Constants.h; path = TheEngineSample/Constants.h; sourceTree = "<group>"; };
 		2CFBA7891EB783E0001A595E /* Cuboid.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Cuboid.cpp; path = TheEngineSample/Cuboid.cpp; sourceTree = "<group>"; };
 		2CFBA78A1EB783E0001A595E /* Cuboid.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Cuboid.hpp; path = TheEngineSample/Cuboid.hpp; sourceTree = "<group>"; };
-		2CFBA78D1EB783E0001A595E /* DoubleBufferedReverb.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DoubleBufferedReverb.cpp; path = TheEngineSample/DoubleBufferedReverb.cpp; sourceTree = "<group>"; };
-		2CFBA78E1EB783E0001A595E /* DoubleBufferedReverb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DoubleBufferedReverb.h; path = TheEngineSample/DoubleBufferedReverb.h; sourceTree = "<group>"; };
 		2CFBA78F1EB783E0001A595E /* energyTerm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = energyTerm.cpp; path = TheEngineSample/energyTerm.cpp; sourceTree = "<group>"; };
 		2CFBA7901EB783E0001A595E /* energyTerm.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = energyTerm.hpp; path = TheEngineSample/energyTerm.hpp; sourceTree = "<group>"; };
 		2CFBA7931EB783E0001A595E /* FirstOrderFilter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FirstOrderFilter.cpp; path = TheEngineSample/FirstOrderFilter.cpp; sourceTree = "<group>"; };
@@ -140,8 +137,6 @@
 				2CFBA7881EB783E0001A595E /* Constants.h */,
 				2CFBA7891EB783E0001A595E /* Cuboid.cpp */,
 				2CFBA78A1EB783E0001A595E /* Cuboid.hpp */,
-				2CFBA78D1EB783E0001A595E /* DoubleBufferedReverb.cpp */,
-				2CFBA78E1EB783E0001A595E /* DoubleBufferedReverb.h */,
 				2CFBA78F1EB783E0001A595E /* energyTerm.cpp */,
 				2CFBA7901EB783E0001A595E /* energyTerm.hpp */,
 				2CFBA7C21EB78435001A595E /* FDN.cpp */,
@@ -252,7 +247,6 @@
 				2CFBA7C11EB783E0001A595E /* Vector3D.cpp in Sources */,
 				2CFBA7C91EB785BF001A595E /* BiQuadFilter.cpp in Sources */,
 				2CFBA7B71EB783E0001A595E /* Gains.cpp in Sources */,
-				2CFBA7B21EB783E0001A595E /* DoubleBufferedReverb.cpp in Sources */,
 				2CFBA7B61EB783E0001A595E /* FourthOrderFilter.cpp in Sources */,
 				2CFBA7AF1EB783E0001A595E /* BMMultiTapDelay.c in Sources */,
 				2CFBA7B51EB783E0001A595E /* FirstOrderFilter.cpp in Sources */,

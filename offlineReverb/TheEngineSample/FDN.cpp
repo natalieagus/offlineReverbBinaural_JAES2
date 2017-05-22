@@ -14,6 +14,7 @@
 
 
 
+
 void FDN::impulseResponse(long numSamples, std::ofstream* outputFileLeft, std::ofstream* outputFileRight){
     
     clock_t begin = clock();
@@ -41,8 +42,7 @@ void FDN::impulseResponse(long numSamples, std::ofstream* outputFileLeft, std::o
     
     clock_t end = clock();
     double elapsed_msecs = double(end - begin) / CLOCKS_PER_SEC * 1000.f;
-    time_elapsed_msecs += elapsed_msecs;
-    printf("Time elapsed: %f ms\n", time_elapsed_msecs);
+    printf("Time elapsed: %f ms\n", elapsed_msecs);
     
     *outputFileLeft << "\n";
     *outputFileRight << "\n";
@@ -54,8 +54,10 @@ void FDN::setParameterSafe(Parameter params)
 
     clock_t begin = clock();
     
+    listenerOrientation = 0.0f;
     
-    parametersFDN = newParametersFDN;
+    parametersFDN = params;
+    listenerOrientation = parametersFDN.orientation;
     reverbOn = parametersFDN.roomWidth > 0.05;
     
     printf("RT60: %f, room width : %f, room length : %f roomHeight: %f\n", parametersFDN.RT60, parametersFDN.roomWidth, parametersFDN.roomHeight, parametersFDN.roomCeiling);
@@ -72,16 +74,18 @@ void FDN::setParameterSafe(Parameter params)
 //    Room.segmentCube(4 * 4); //even segmentation
     
     //Approximately radial segmentation
-    Room.segmentCubeBasedOnProjectedArea(TOTALDELAYS-SMOOTHDELAY, parametersFDN.soundSourceLoc, parametersFDN.listenerLoc);
+//    Room.segmentCubeBasedOnProjectedArea(TOTALDELAYS-SMOOTHDELAY, parametersFDN.soundSourceLoc, parametersFDN.listenerLoc);
+    Room.sliceCube(TOTALDELAYS-SMOOTHDELAY);
     
     //Set delay times
-    Room.getDelayValues(delayTimes, parametersFDN.listenerLoc, parametersFDN.soundSourceLoc, SAMPLE_RATE_F);
+    Room.getDelayValues(delayTimes, parametersFDN.listenerLocLeftEar, parametersFDN.listenerLocRightEar, parametersFDN.soundSourceLoc, SAMPLE_RATE_F);
+    
     
     printf("Room elements %d \n", Room.elements);
     resetTapAttenuation(parametersFDN.RT60);
     GainValues = Gains(DMIN, Room.elements, Room.area, feedbackTapGains, parametersFDN.RT60, Room.volume);
     
-    GainValues.brdfPhong = BRDFenergy;
+//    GainValues.brdfPhong = BRDFenergy;
     
     float insufficiency = GainValues.calculateGains(Room.segmentedSides, parametersFDN.listenerLoc, parametersFDN.soundSourceLoc);
     
@@ -137,7 +141,7 @@ void FDN::setParameterSafe(Parameter params)
     setDelayChannels();
     setDelayNoOutputLength();
 
-    
+#ifdef ENERGY_BALANCE
     
     //Handle energy excess or insufficiency here
     if (insufficiency > 0.0f){
@@ -173,7 +177,7 @@ void FDN::setParameterSafe(Parameter params)
             float maxInGainSq = 0.0f;
             int indexMaxInGain = 0;
             
-            for (int i = 0; i<TOTALDELAYS; i++){
+            for (int i = 0; i<TOTALDELAYS-SMOOTHDELAY; i++){
                 if (inputGains[i] * inputGains[i] > maxInGainSq){
                     maxInGain = inputGains[i];
                     maxInGainSq = inputGains[i] * inputGains[i];
@@ -235,11 +239,11 @@ void FDN::setParameterSafe(Parameter params)
         newTotalInputEnergy += inputGains[i] * inputGains[i];
     }
     
-    printf("Previous totalEnergy: %f, New total input energy: %f, correct energy: %f, effectiveEnergy: %f \n", GainValues.totalInputEnergy, newTotalInputEnergy, GainValues.correctInputEnergy, newTotalInputEnergy * (float)(TOTALDELAYS-SMOOTHDELAY)/(TOTALDELAYS));
+    printf("Previous totalEnergy: %f, New total input energy: %f, correct energy: %f, effectiveEnergyOut without the nogain delay line: %f \n", GainValues.totalInputEnergy, newTotalInputEnergy, GainValues.correctInputEnergy, newTotalInputEnergy * (float)(TOTALDELAYS-SMOOTHDELAY)/(TOTALDELAYS));
     
-//
+
 //    for (int i = 1; i< TOTALDELAYS; i++){
-//        printf("Delay times :%d \n", delayTimes[i]);
+//        printf("Delay times i %d:%d \n", i,delayTimes[i]);
 //    }
     
 //    * @param stereo    is it stereo (true) or mono (false). Mono uses Left only
@@ -257,7 +261,7 @@ void FDN::setParameterSafe(Parameter params)
         
         setMultiTapDelayChannels();
     }
-    
+#endif
 //    for (int i = 1; i< TOTALDELAYS; i++){
 //        printf("Delay times :%d \n", delayTimes[i]);
 //    }
@@ -329,16 +333,9 @@ void FDN::setParameterSafe(Parameter params)
     
     clock_t end = clock();
     
-    double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-    printf("Time elapsed: %f\n", elapsed_secs);
-    time[timeindex] = elapsed_secs;
-    timeindex++;
-    
-    if (timeindex > 30){
-        timeindex = 0;
-    }
-    
-    
+    double elapsed_msecs = double(end - begin) / CLOCKS_PER_SEC * 1000;
+    printf("Time elapsed miliseconds: %f\n", elapsed_msecs);
+
     printf("\n\n======Setting End=======\n\n");
     //        printf("DA %f \n", directAttenuation);
 }
@@ -346,34 +343,34 @@ void FDN::setParameterSafe(Parameter params)
 // this is the function we call to process the audio from iFretless.
 void  FDN::processIFretlessBuffer(float* input, size_t numFrames, float* outputL, float* outputR)
 {
-    // bypass reverb
-    //for (int i = 0; i < numFrames; i++) {
-    //    outputL[i] = outputR[i] = ioBuffer[i];
-    //}
-    // return;
-    
-    if (parameterNeedsUpdate){
-        setParameterSafe(newParametersFDN);
-        parameterNeedsUpdate = false;
-        for (size_t i = 0; i < numFrames; i++){
-            processReverb(&zero_f, outputL + i, outputR + i);
-        }
-//            printf("DA %f \n", directAttenuation);
-    }
-    
-    else {
-        if (reverbOn){
-            for (UInt32 i = 0; i < numFrames; i++){
-                float* inputPtr = input + i;
-                processReverb(inputPtr, outputL + i, outputR + i);
-            }
-        }
-        else{
-            // spread the signal to the left and right channels
-            memcpy(outputL, input, numFrames * sizeof(Float32));
-            memcpy(outputR, input, numFrames * sizeof(Float32));
-        }
-    }
+//    // bypass reverb
+//    //for (int i = 0; i < numFrames; i++) {
+//    //    outputL[i] = outputR[i] = ioBuffer[i];
+//    //}
+//    // return;
+//    
+//    if (parameterNeedsUpdate){
+//        setParameterSafe(newParametersFDN);
+//        parameterNeedsUpdate = false;
+//        for (size_t i = 0; i < numFrames; i++){
+//            processReverb(&zero_f, outputL + i, outputR + i);
+//        }
+////            printf("DA %f \n", directAttenuation);
+//    }
+//    
+//    else {
+//        if (reverbOn){
+//            for (UInt32 i = 0; i < numFrames; i++){
+//                float* inputPtr = input + i;
+//                processReverb(inputPtr, outputL + i, outputR + i);
+//            }
+//        }
+//        else{
+//            // spread the signal to the left and right channels
+//            memcpy(outputL, input, numFrames * sizeof(Float32));
+//            memcpy(outputR, input, numFrames * sizeof(Float32));
+//        }
+//    }
 }
 
 
@@ -386,11 +383,11 @@ void  FDN::processIFretlessBuffer(float* input, size_t numFrames, float* outputL
 inline void FDN::processReverb(float* pInput, float* pOutputL, float* pOutputR)
 {
     
-    
+
     // copy the filtered input so that we can process it without affecting the original value
     float xn = *pInput;
     float fdnTankOutsNew[CHANNELS] = {0};
-    float directRaysOutput[2] = { xn *directAttenuation, xn *directAttenuation };
+    float directRaysOutput[2] = { xn * directAttenuation, xn * directAttenuation };
    // printf("%f \n", directAttenuation);
     
     
@@ -399,6 +396,8 @@ inline void FDN::processReverb(float* pInput, float* pOutputL, float* pOutputR)
     
     vDSP_vgathra (const_cast<const float**>(rwIndices), 1, outputsPF, 1, numDelays);
     
+    // scale the output taps according to the feedBackTapGains
+    vDSP_vmul(feedbackTapGains, 1, outputsPF, 1, outputsPF, 1, numDelays);
     
     //Processing outputs
     vDSP_vmul(outputGains, 1, outputsPF, 1, outputsBinaural, 1, numDelays);
@@ -420,24 +419,32 @@ inline void FDN::processReverb(float* pInput, float* pOutputL, float* pOutputR)
     
     float fdnTankOutLeft[CHANNELS] = {};
     float fdnTankOutRight[CHANNELS] = {};
-    filterChannels(fdnTankOutsNew, directRaysOutput, fdnTankOutLeft, fdnTankOutRight); //HRTF
+    processDirectRaysDelay(directRaysOutput, directRaysOutput); //delays the rays
+    
+    filterChannelsHRTF(fdnTankOutsNew, directRaysOutput, fdnTankOutLeft, fdnTankOutRight); //HRTF
     
     float reverbOut[2] = {0.0f, 0.0f};
-    processDirectRays(directRaysOutput, directRaysOutput); //delays the rays
+
     addReverbDelay(fdnTankOutLeft, fdnTankOutRight); //Temp point delays
+    
     vDSP_sve(fdnTankOutLeft, 1, &reverbOut[0], CHANNELS);
     vDSP_sve(fdnTankOutRight, 1, &reverbOut[1], CHANNELS);
 
-    *pOutputL = (directRaysOutput[0]*directPortionOn - reverbOut[0]*reverbPortionOn);
-    *pOutputR = (directRaysOutput[1]*directPortionOn - reverbOut[1]*reverbPortionOn);
+    *pOutputL = (directRaysOutput[0]);
+    *pOutputR = (directRaysOutput[1]);
+////
+//    *pOutputL = (reverbOut[0]);
+//    *pOutputR = (reverbOut[1]);
+//    
+    *pOutputL = (directRaysOutput[0]+ reverbOut[0]);
+    *pOutputR = (directRaysOutput[1]+ reverbOut[1]);
     
     //Continue processing reverb
 
     // vDSP_vsmul(outputsPF, 1, &parametersFDN.reflection, outputsPF, 1, numTaps);
     
     
-    // scale the output taps according to the feedBackTapGains
-    vDSP_vmul(feedbackTapGains, 1, outputsPF, 1, outputsPF, 1, numDelays);
+
     // apply a first order high-shelf filter to the feedback path
     //
     // This filter structure is direct form 2 from figure 14 in section 1.1.6
@@ -708,24 +715,22 @@ inline bool FDN::BMPowerOfTwoQ (size_t x)
 
 
 
-
-
-
-
 //ITD for reverb
 inline void FDN::addReverbDelay(float* fdnLeft, float*fdnRight){
     for(int i = 0; i < CHANNELS/2; i++){
-        //left, delay channels 0-CHANNELS/2
-        fdnLeft[i] = reverbDelays[i].process(fdnLeft[i]);
+        //left ear, channel 0123 needs to be delayed by left-right time ITD
+
+        fdnLeft[i] = reverbDelays[i].process(fdnLeft[i]); //Left ear channel 0123 gets ITD from channel 0123
     }
     for (int i = CHANNELS/2 ; i < CHANNELS; i++){
-        //right, delay channels CHANNELS/2 - CHANNELS
-        fdnRight[i] = reverbDelays[i].process(fdnRight[i]);
+        //right ear, channel 4567 needs to be delayed by right-left time ITD
+
+        fdnRight[i] = reverbDelays[i].process(fdnRight[i]);//Right ear channel 0123 gets ITD from channel 4567
     }
 }
 
 //ITD for direct rays
-inline void FDN::processDirectRays(float* input, float* directRaysOutput){
+inline void FDN::processDirectRaysDelay(float* input, float* directRaysOutput){
     directRaysOutput[0] = directRays[0].process(input[0]);
     directRaysOutput[1] = directRays[1].process(input[1]);
 }
@@ -739,12 +744,15 @@ inline void FDN::processTankOut(float fdnTankOut[CHANNELS]){
 }
 
 //HRTF
-inline void FDN::filterChannels(float fdnTankOut[8], float directRay[2], float fdnTankOutLeft[8], float fdnTankOutRight[8]){
+inline void FDN::filterChannelsHRTF(float fdnTankOut[CHANNELS], float directRay[2], float fdnTankOutLeft[CHANNELS], float fdnTankOutRight[CHANNELS]){
     //Filter left & right ear
     for (size_t i = 0; i < CHANNELS; i++){
         fdnTankOutLeft[i] = leftEarFilter[i].process(fdnTankOut[i]);
+//        printf("i %d fdn tank out left %f input %f \n", i, fdnTankOutLeft[i], fdnTankOut[i]);
         fdnTankOutRight[i] = rightEarFilter[i].process(fdnTankOut[i]);
+//               printf("i %d fdn tank out right %f input %f \n", i, fdnTankOutRight[i], fdnTankOut[i]);
     }
+    
     //Filter direct rays
     directRay[0] = directRayFilter[0].process(directRay[0]);
     directRay[1] = directRayFilter[1].process(directRay[1]);
@@ -756,11 +764,6 @@ FDN::FDN(void)
     initialise(powerSaveByDefault);
 }
 
-FDN::FDN(bool powerSaveMode)
-{
-    initialise(powerSaveMode);
-}
-
 void FDN::initialise(bool powerSaveMode){
     
     numDelays = TOTALDELAYS;
@@ -770,7 +773,7 @@ void FDN::initialise(bool powerSaveMode){
     
     parametersFDN =  Parameter();
     
-    BRDFenergy = energyTerm();
+//    BRDFenergy = energyTerm();
     
     setParameterSafe(parametersFDN);
 
@@ -803,14 +806,14 @@ void FDN::resetReadIndices(){
 inline void FDN::updateRand()
 {
     randomSeed = (214013 * randomSeed + 2531011);
-    rand = (randomSeed >> 16) & 0x7FFF;
+    rands = (randomSeed >> 16) & 0x7FFF;
 }
 
 
 void FDN::resetTapAttenuation(float rt60){
     for (int i = 0; i < numDelays; i++){
-        updateRand();
-        feedbackTapGains[i] = gain(rt60, delayTimes[i]);
+//        updateRand();
+        feedbackTapGains[i] = gain(rt60, delayTimes[i]);// * powf(-1, (float)( rand() % 10));
       //  printf("Delay time: %d, gain %f \n", delayTimes[i], feedbackTapGains[i]);
     }
 }
@@ -922,8 +925,8 @@ double FDN::gain(double rt60, double delayLengthInSamples) {
 }
 
 void FDN::setParameter(Parameter params){
-    newParametersFDN = params;
-    parameterNeedsUpdate = true;
+//    newParametersFDN = params;
+//    parameterNeedsUpdate = true;
 }
 
 
@@ -931,31 +934,42 @@ void FDN::setParameter(Parameter params){
 //Configure channel of each point
 void FDN::setDelayChannels(){
     
-
+//
     for (size_t i = 0; i < TOTALDELAYS-SMOOTHDELAY ; i++){
-        delayTimesChannel[i] = determineChannel(Room.segmentedSides[i].getMidpoint().x, Room.segmentedSides[i].getMidpoint().y);
+        delayTimesChannel[i] = determineChannel(Room.segmentedSides[i].getMidpoint().x, Room.segmentedSides[i].getMidpoint().y, listenerOrientation);
+//        delayTimesChannel[i] = 2;
+//        printf("channel : %zu, room %f %f, listener %f %f  \n", delayTimesChannel[i], Room.segmentedSides[i].getMidpoint().x, Room.segmentedSides[i].getMidpoint().y, parametersFDN.listenerLoc.x, parametersFDN.listenerLoc.y);
     }
-    delayTimes[TOTALDELAYS-SMOOTHDELAY] = 0;
     
+//    sort(delayTimesChannel, delayTimesChannel + TOTALDELAYS);
+//
+//    //
+//    for (size_t i = 0; i < TOTALDELAYS-SMOOTHDELAY ; i++){
+////        delayTimesChannel[i] = determineChannel(Room.segmentedSides[i].getMidpoint().x, Room.segmentedSides[i].getMidpoint().y, listenerOrientation);
+//        //        delayTimesChannel[i] = 2;
+//        printf("channel : %zu\n", delayTimesChannel[i]);
+//    }
+    delayTimes[TOTALDELAYS-SMOOTHDELAY] = 0;
+//
 
     
 }
 
 void  FDN::setMultiTapDelayChannels(){
     for (int i = 0; i<multiTapDelayTapsNumber; i++){
-        multiDelayLinePointsChannel[i] = determineChannel(multiDelayLinePoints[i].x, multiDelayLinePoints[i].y);
+        multiDelayLinePointsChannel[i] = determineChannel(multiDelayLinePoints[i].x, multiDelayLinePoints[i].y, listenerOrientation);
     }
 }
 
 //Calculate delay time for each delay tap in the FDN
-inline void FDN::setDelayTimes(){
-    
-
-    for (int i = 0; i < numDelays ; i++){
-        delayTimes[i] = 100+i * (i/2);
-    }
-    
-}
+//inline void FDN::setDelayTimes(){
+//    
+//
+//    for (int i = 0; i < numDelays ; i++){
+//        delayTimes[i] = 100+i * (i/2);
+//    }
+//    
+//}
 
 inline void FDN::setDirectGains(){
     
@@ -970,6 +984,7 @@ inline void FDN::setDirectGains(){
     
     
     directAttenuation = DMIN/(SL) ;
+//    printf("Direct attn : %f \n", directAttenuation);
 
 }
 
@@ -982,8 +997,10 @@ inline void FDN::setDirectDelayTimes()
     float directDelayLeft = parametersFDN.soundSourceLoc.distance(parametersFDN.listenerLocLeftEar) / SOUNDSPEED;
     float directDelayRight = parametersFDN.soundSourceLoc.distance(parametersFDN.listenerLocRightEar) / SOUNDSPEED;
     directDelayTimes[0] = directDelayLeft;
+    printf("delay left %f \n", directDelayTimes[0]);
 
     directDelayTimes[1] = directDelayRight;
+        printf("delay right %f \n", directDelayTimes[1]);
 }
 
 //Setting direct ray angle with respect to listener location
@@ -992,14 +1009,19 @@ void FDN::setDirectRayAngles()
     float yDiff, xDiff;
     yDiff = parametersFDN.soundSourceLoc.y - parametersFDN.listenerLocLeftEar.y;
     xDiff = parametersFDN.soundSourceLoc.x - parametersFDN.listenerLocLeftEar.x;
-    float angle = atan2(xDiff, yDiff) * 180.0f / M_PI;
-    directRayAngles[0] = angle;
+    float angleInDegrees = atan2(xDiff, yDiff) * 180.0f / M_PI - parametersFDN.orientation;
+
+    directRayAngles[0] = angleInDegrees;
     
     float yDiff2, xDiff2;
     yDiff2 = parametersFDN.soundSourceLoc.y - parametersFDN.listenerLocRightEar.y;
     xDiff2 = parametersFDN.soundSourceLoc.x - parametersFDN.listenerLocRightEar.x;
-    float angle2 = atan2(xDiff2, yDiff2) * 180.0f / M_PI;
-    directRayAngles[1] = angle2;
+    float angleInDegrees2 = atan2(xDiff2, yDiff2) * 180.0f / M_PI - parametersFDN.orientation;
+    
+
+    directRayAngles[1] = angleInDegrees2;
+    
+    printf("directRayAngle L %f R %f \n", directRayAngles[0], directRayAngles[1]);
 }
 
 
@@ -1017,7 +1039,8 @@ void FDN::setTempPoints(){
     float h = parametersFDN.listenerLoc.y;
     
     for (int i = 0; i < CHANNELS/2; i++){
-        float angle = channelToAngle(i);
+        float angle = channelToAngle(i) ;
+//        printf("Angle %f \n", angle);
         float m = 1.0f/tan(angle * M_PI / 180.f);
         //y = mx + 0
         Vector3D pointArray[4] = {Vector3D(yBot/m, yBot),
@@ -1055,12 +1078,26 @@ void FDN::setTempPoints(){
 }
 
 void FDN::calculateAdditionalDelays(){
+    
+////    
+//    tempPoints[0] = Vector3D(parametersFDN.listenerLoc.x + DMIN * cosf(67.5f/180.f*M_PI),parametersFDN.listenerLoc.y + DMIN * sinf(67.5f/180.f*M_PI));
+//    tempPoints[1] = Vector3D(parametersFDN.listenerLoc.x + DMIN * cosf(22.5f/180.f*M_PI),parametersFDN.listenerLoc.y + DMIN * sinf(22.5f/180.f*M_PI));
+//    tempPoints[2] = Vector3D(parametersFDN.listenerLoc.x + DMIN * cosf(-22.5f/180.f*M_PI),parametersFDN.listenerLoc.y + DMIN * sinf(-22.5f/180.f*M_PI));
+//    tempPoints[3] = Vector3D(parametersFDN.listenerLoc.x + DMIN * cosf(-67.5f/180.f*M_PI),parametersFDN.listenerLoc.y + DMIN * sinf(-67.5f/180.f*M_PI));
+//    tempPoints[4] = Vector3D(parametersFDN.listenerLoc.x + DMIN * cosf(-112.5f/180.f*M_PI),parametersFDN.listenerLoc.y + DMIN * sinf(-112.5f/180.f*M_PI));
+//    tempPoints[5] = Vector3D(parametersFDN.listenerLoc.x + DMIN * cosf(-157.5f/180.f*M_PI),parametersFDN.listenerLoc.y + DMIN * sinf(-157.5f/180.f*M_PI));
+//    tempPoints[6] = Vector3D(parametersFDN.listenerLoc.x + DMIN * cosf(157.5f/180.f*M_PI),parametersFDN.listenerLoc.y + DMIN * sinf(157.5f/180.f*M_PI));
+//    tempPoints[7] = Vector3D(parametersFDN.listenerLoc.x + DMIN * cosf(112.5f/180.f*M_PI),parametersFDN.listenerLoc.y + DMIN * sinf(112.5f/180.f*M_PI));
+//
     for (int i = 0; i < CHANNELS; i++)
     {
-        if (i < CHANNELS/2){ //CHANNEL 0 -3 FOR RIGHT EAR
+//        printf("Tempoints i %d : %f %f %f \n", i, tempPoints[i].x, tempPoints[i].y, tempPoints[i].z);
+        if (i < CHANNELS/2){
+
             //near to right use temp0,leftear- temp0,rightear, 0 to 3, FOR LEFT EAR
             float d = (tempPoints[i].distance(parametersFDN.listenerLocLeftEar) - tempPoints[i].distance(parametersFDN.listenerLocRightEar))  / SOUNDSPEED;
             
+//            printf("d channel 0123 %f \n", d);
             if(d<0.00000001){
                 printf("FALSE...\n");
                 d = 0.0001;
@@ -1068,17 +1105,17 @@ void FDN::calculateAdditionalDelays(){
             additionalDelays[i] = d;
         }
         
-        else{ //CHANNEL 4-7 FOR LEFT EAR
+        else{
             //near to left use temp4,rightear - temp4,leftear, 4 to 7, FOR RIGHT EAR
             float d = (tempPoints[i].distance(parametersFDN.listenerLocRightEar) - tempPoints[i].distance(parametersFDN.listenerLocLeftEar))  / SOUNDSPEED;
-            
+//                printf("d channel 4567 %f \n", d);
             if(d<0.00000001){
                 printf("FALSE...\n");
                 d = 0.0001;
             }
             additionalDelays[i] = d;
         }
-//         printf("DELAY ADDITIONAL : %f \n", additionalDelays[i]);
+         printf("DELAY ADDITIONAL : %f samples \n", additionalDelays[i]*44100);
         reverbDelays[i].setTimeSafe(additionalDelays[i]);
     }
     
@@ -1092,43 +1129,58 @@ void FDN::setDirectSingleTapDelay(){
 void FDN::setFilters(){
     //Right is negative, p.151 DAFX
     for (size_t i = 0; i < CHANNELS; i++){
-        leftEarFilter[i].setAngle(-channelToAngle(i), SAMPLINGRATEF, false);
-        rightEarFilter[i].setAngle(channelToAngle(i), SAMPLINGRATEF, true);
+//        float angle = channelToAngle(i);
+//        printf("i %d Channel to Angle : %f \n", i,angle);
+        
+        leftEarFilter[i].setAngle(channelToAngle(i)+90.f, SAMPLINGRATEF, false);
+        rightEarFilter[i].setAngle(channelToAngle(i)-90.f, SAMPLINGRATEF, true);
     }
     
-    directRayFilter[0].setAngle(-directRayAngles[0], SAMPLINGRATEF,false);
-    directRayFilter[1].setAngle(directRayAngles[1], SAMPLINGRATEF, true);
+    directRayFilter[0].setAngle(directRayAngles[0]+90.f, SAMPLINGRATEF,false);
+    directRayFilter[1].setAngle(directRayAngles[1]-90.f, SAMPLINGRATEF, true);
     
 }
 
-//Helper functions
-float FDN::channeltoangleNormal(size_t channel){
-        float channelWidth = 360.0f / (float)CHANNELS;
-     return (float)channel * channelWidth + (channelWidth / 2.0f);
-}
+
 
 float FDN::channelToAngle(size_t channel){
     float channelWidth = 360.0f / (float)CHANNELS;
-    size_t midChannel = CHANNELS / 2 - 1;
-   // return (float)channel * channelWidth + (channelWidth / 2.0f);
-    if (channel <= midChannel){
-        return (float)channel * channelWidth + (channelWidth / 2.0f);
-    }
-    else{
-        return (-1.f  * (float) (CHANNELS - channel) * channelWidth )+ (channelWidth / 2.0f);
-    }
+//    size_t midChannel = CHANNELS / 2 - 1;
+//       printf("Channel : %d Angle %f \n", channel, (float)channel * channelWidth + (channelWidth / 2.0f));
+    return (float)channel * channelWidth  + (channelWidth / 2.0f);
+//    if (channel <= midChannel){f
+//        return (float)channel * channelWidth + (channelWidth / 2.0f);
+//    }
+//    else{
+//        return (-1.f  * (float) (CHANNELS - channel) * channelWidth )+ (channelWidth / 2.0f);
+//    }
+ 
 }
 
 size_t FDN::angleToChannel(float angleInDegrees){
     
+//    printf(" original angle %f \n", angleInDegrees);
+    if (angleInDegrees<0){
+        angleInDegrees = fabs(angleInDegrees) + 90.f;
+    }
+    else if(0 <= angleInDegrees and angleInDegrees<= 90){
+        angleInDegrees = 90.f-angleInDegrees;
+    }
+    else if( 90 < angleInDegrees and angleInDegrees <= 180){
+        float difference = 180.f-angleInDegrees;
+        angleInDegrees = 270.f + difference;
+    }
+    
     float channelWidth = 360.0f / CHANNELS;
     
     //Channel 0 to 7 from 12 o'clock, clockwise according from DFX
-    return (size_t)floorf(angleInDegrees / channelWidth);
+    size_t channel =(size_t)floorf(angleInDegrees / channelWidth);
+//    printf("From angle: %f to channel %d \n", angleInDegrees, channel);
+    return channel;
 }
 
 //azimuth is clockwise 0 to 360 degree, p. 149 DAFX
-size_t FDN::determineChannel(float x,float y){
+size_t FDN::determineChannel(float x,float y, float orientation){
     float xL = parametersFDN.listenerLoc.x;
     float yL = parametersFDN.listenerLoc.y;
     
@@ -1136,9 +1188,9 @@ size_t FDN::determineChannel(float x,float y){
     float yDistance = y - yL;
     
     float angle2 = atan2f(xDistance, yDistance) * 180.0f / M_PI;
-    if (angle2 < 0.0f ){
-        angle2 += 360.0f;
-    }
+    
+//    printf("Angle %f \n", angle2);
+
     return angleToChannel(angle2);
     
 }
@@ -1148,7 +1200,7 @@ void FDN::setDelayNoOutputLength(){
     
     //Set delay length for delay-without-output
     std::random_device rd;     // only used once to initialise (seed) engine
-    std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
+    std::mt19937 rng(11);    // random-number engine used (Mersenne-Twister in this case)
     std::uniform_int_distribution<int> uni(50, parametersFDN.roomCeiling/SOUNDSPEED * SAMPLE_RATE_F); // guaranteed unbiased
     
     

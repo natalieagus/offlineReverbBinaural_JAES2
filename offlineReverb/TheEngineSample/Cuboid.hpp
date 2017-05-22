@@ -71,13 +71,16 @@ typedef struct Cuboid{
         volume = this->xLength * this->yLength * this->zLength;
     }
     
+    //uneven slice
+    void sliceCube(int slices);
+    //even slice
     void segmentCube(int tilesPerSide);
     
     float segmentCubeOnce(int d);
     
     float segmentCubeOnce();
     
-    void getDelayValues(int* delayValues, Vector3D L, Vector3D S, int Hz);
+    void getDelayValues(int* delayValues, Vector3D LLE, Vector3D LRE, Vector3D S, int Hz);
 
     void segmentCubeBasedOnProjectedArea(int numDelays, Vector3D S, Vector3D L);
 

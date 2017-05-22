@@ -44,7 +44,7 @@ void saveImpulse(int type, int samples, std::ofstream* ofLeft, std::ofstream* of
     ofLeft->open(filenameL);
     ofRight->open(filenameR);
     
-    FDN reverb = FDN(type);
+    FDN reverb = FDN();
     reverb.impulseResponse(samples, ofLeft, ofRight);
     
     std::cout << "impulse saved for type " << type << ".\n";

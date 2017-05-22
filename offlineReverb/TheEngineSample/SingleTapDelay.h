@@ -21,6 +21,7 @@ public:
     float process(float input);
     float time;
     
+    
 private:
     void updateLength();
     float delayLineBuffer [MAX_DELAY_LINE];

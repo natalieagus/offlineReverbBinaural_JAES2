@@ -10,6 +10,77 @@
 #include <algorithm>    // std::sort
 using namespace std;
 
+
+void Cuboid::sliceCube(int slices){
+    
+
+    int toSlice = 0;
+    
+    while(true){
+        if (6*toSlice * toSlice < slices){
+            toSlice += 1;
+        }
+        if (6*toSlice * toSlice > slices){
+            toSlice -= 1;
+            break;
+        }
+        
+        }
+    
+//    printf("toSlice is : %d\n" , toSlice);
+    segmentCube(toSlice*toSlice);
+    
+    int cubicTiles = 6*toSlice*toSlice;
+    Plane3D* newSegmentedSides = new Plane3D[slices];
+    //copy into newSegmentedSides
+    for (int i = 0; i<cubicTiles; i++){
+        newSegmentedSides[i] = Plane3D(segmentedSides[i].corner, segmentedSides[i].S1, segmentedSides[i].S2);
+    }
+    
+    elements = slices;
+    int remainder = slices - cubicTiles;
+    int index = cubicTiles;
+    
+    srand(11);
+    int randNum = rand()%(cubicTiles-1);
+    //divide some plane into two
+    for (int i = 0; i<remainder; i++){
+        Plane3D refPlane = segmentedSides[randNum];
+        //divide into two along S1
+        if (randNum %2 == 0){
+            Vector3D newCorner = refPlane.corner.add(refPlane.S1.scalarMult(0.5f));
+            Vector3D newS1 = refPlane.S1.scalarMult(0.5f);
+            newSegmentedSides[randNum] = Plane3D(refPlane.corner, newS1, refPlane.S2);
+            newSegmentedSides[index] = Plane3D(newCorner, newS1, refPlane.S2);
+            index++;
+            randNum = rand()%(cubicTiles-1);
+        }
+        else{
+            Vector3D newCorner = refPlane.corner.add(refPlane.S2.scalarMult(0.5f));
+            Vector3D newS2 = refPlane.S2.scalarMult(0.5f);
+            newSegmentedSides[randNum] = Plane3D(refPlane.corner,  refPlane.S1, newS2);
+            newSegmentedSides[index] = Plane3D(newCorner,refPlane.S1, newS2);
+            index++;
+            randNum = rand()%(cubicTiles-1);
+        }
+    }
+    
+    segmentedSides = new Plane3D[slices];
+    //copy back into segmentedsides
+    for (int i = 0; i<elements; i++){
+        segmentedSides[i] = Plane3D(newSegmentedSides[i].corner, newSegmentedSides[i].S1, newSegmentedSides[i].S2);
+    }
+    
+    free(newSegmentedSides);
+    
+//    
+    for (int i = 0; i<(slices); i++){
+        printf("{{%f, %f, %f}, {%f, %f, %f}, {%f, %f, %f}},", segmentedSides[i].corner.x, segmentedSides[i].corner.y, segmentedSides[i].corner.z, segmentedSides[i].S1.x , segmentedSides[i].S1.y, segmentedSides[i].S1.z, segmentedSides[i].S2.x, segmentedSides[i].S2.y, segmentedSides[i].S2.z );
+    }
+    
+    
+}
+
 void Cuboid::segmentCube(int tilesPerSide){
     
     //Make sure tilesPerSide can be exactly square-rooted
@@ -142,10 +213,11 @@ void Cuboid::segmentCubeBasedOnProjectedArea(int numDelays, Vector3D S, Vector3D
         for (int i = delaysCeilingFloor; i<index; i++){
 
             //add is better
-            float comparisonValue =   fabs(ProjectedArea_rectangleSubDiv(segmentedSides[i], S, 5)) + fabs(ProjectedArea_rectangleSubDiv(segmentedSides[i], L, 5)) ;
+//            float comparisonValue =   fabs(ProjectedArea_rectangleSubDiv(segmentedSides[i], L, 1));
+            float comparisonValue = segmentedSides[i].getMidpoint().distance(L);
 
            // printf("%d subdivided ? \n ", segmentedSides[i].subdivided);
-            if (comparisonValue > maxArea && segmentedSides[i].subdivided < numDelays){
+            if (comparisonValue > maxArea && segmentedSides[i].subdivided < 4){
                 maxArea = comparisonValue;
                 maxIndex = i;
             }
@@ -155,6 +227,32 @@ void Cuboid::segmentCubeBasedOnProjectedArea(int numDelays, Vector3D S, Vector3D
 //            }
         }
         
+        int randNum = rand()%100;
+        //divide some plane into two
+
+            //divide into two along S1
+            if (randNum %2 == 0){
+                Vector3D newCorner = segmentedSides[maxIndex].corner.add(segmentedSides[maxIndex].S1.scalarMult(0.5f));
+                Vector3D newS1 = segmentedSides[maxIndex].S1.scalarMult(0.5f);
+                int oldIndex = segmentedSides[maxIndex].subdivided;
+                segmentedSides[maxIndex] = Plane3D(segmentedSides[maxIndex].corner, newS1, segmentedSides[maxIndex].S2);
+                segmentedSides[maxIndex].subdivided = oldIndex + 1;
+                segmentedSides[index] = Plane3D(newCorner, newS1, segmentedSides[maxIndex].S2);
+                segmentedSides[index].subdivided = segmentedSides[maxIndex].subdivided;
+                index++;
+            }
+            else{
+                Vector3D newCorner = segmentedSides[maxIndex].corner.add(segmentedSides[maxIndex].S2.scalarMult(0.5f));
+                Vector3D newS2 = segmentedSides[maxIndex].S2.scalarMult(0.5f);
+                int oldIndex = segmentedSides[maxIndex].subdivided;
+                segmentedSides[maxIndex] = Plane3D(segmentedSides[maxIndex].corner,  segmentedSides[maxIndex].S1, newS2);
+                segmentedSides[maxIndex].subdivided = oldIndex + 1;
+                segmentedSides[index] = Plane3D(newCorner,segmentedSides[maxIndex].S1, newS2);
+                segmentedSides[index].subdivided = segmentedSides[maxIndex].subdivided;
+                index++;
+            }
+        
+        
         //split that patch
         index = dividePlane(segmentedSides[maxIndex], index, maxIndex, S, L);
         
@@ -163,9 +261,9 @@ void Cuboid::segmentCubeBasedOnProjectedArea(int numDelays, Vector3D S, Vector3D
     }
     
 //    printf("Index is finally: %d \n", index);
-//    for (int i = 0; i<(index); i++){
-//        printf("{{%f, %f, %f}, {%f, %f, %f}, {%f, %f, %f}},", segmentedSides[i].corner.x, segmentedSides[i].corner.y, segmentedSides[i].corner.z, segmentedSides[i].S1.x , segmentedSides[i].S1.y, segmentedSides[i].S1.z, segmentedSides[i].S2.x, segmentedSides[i].S2.y, segmentedSides[i].S2.z );
-//    }
+    for (int i = 0; i<(index); i++){
+        printf("{{%f, %f, %f}, {%f, %f, %f}, {%f, %f, %f}},", segmentedSides[i].corner.x, segmentedSides[i].corner.y, segmentedSides[i].corner.z, segmentedSides[i].S1.x , segmentedSides[i].S1.y, segmentedSides[i].S1.z, segmentedSides[i].S2.x, segmentedSides[i].S2.y, segmentedSides[i].S2.z );
+    }
 ////
 }
 
@@ -260,11 +358,18 @@ bool Cuboid::longestDimension(Plane3D patch){
 }
 
 
-void Cuboid::getDelayValues(int *delayValues, Vector3D L, Vector3D S, int Hz){
+void Cuboid::getDelayValues(int *delayValues, Vector3D LLE, Vector3D LRE, Vector3D S, int Hz){
     for (int i =0; i< elements; i++){
         Vector3D p = segmentedSides[i].getMidpoint();
         float d1 = S.subtract(p).magnitude();
-        float d2 = L.subtract(p).magnitude();
+        float d2 = LLE.subtract(p).magnitude();
+        float d2R = LRE.subtract(p).magnitude();
+        
+        //set delay times to the nearest ear
+        if (d2R < d2){
+            d2 = d2R;
+        }
+        
         delayValues[i] = static_cast<int>((d1+d2)/SOUNDSPEED*Hz);
     }
 }

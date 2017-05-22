@@ -11,6 +11,7 @@
 #include <algorithm>
 
 #import <Accelerate/Accelerate.h>
+#define ENERGYRECEIVED 1.f
 using namespace std;
 
 //float Gains::calculateBeta(Vector3D x, Vector3D L, Vector3D S, Vector3D N, float visibilitySX, float visibilityXL){
@@ -46,7 +47,7 @@ float Gains::pointCollectionFunction(Vector3D x, Vector3D L, Vector3D N, float v
 }
 
 float Gains::getDBRDF(){
-    return 1.0f/M_PI;
+    return (1.0f-absorptionCoefficient)/M_PI;
 }
 
 
@@ -54,7 +55,7 @@ float Gains::reflectionKernel(Vector3D x, Vector3D L, Vector3D S, Vector3D N, fl
     Vector3D xSnormalized = Lambda(x, S);
     Vector3D xS = S.subtract(x);
     float g = xSnormalized.dotProduct(N) / powf(xS.magnitude(), 2);
-    return visibility  * g  /M_PI;
+    return visibility  * g * getDBRDF();
  //   return visibility * getDBRDF() * g;
   //  float amt = phongBRDF(S, L, N);
 //    printf("phongbrdf: %f \n", amt);
@@ -77,11 +78,11 @@ void Gains::monteCarloUpsilon(Vector3D *points, Vector3D L, Vector3D S, Vector3D
     //Integrate h over the surface patch
     float hInt = 0.0f;
     for (int i = 0; i<numPoints; i++){
-        hInt += (area * pointCollectionFunction(points[i], L, N, 1.0f, 0.0f))/(float)numPoints;
+        hInt += (area * pointCollectionFunction(points[i], L, N, 1.0f, 0.0f))/(float)numPoints * ENERGYRECEIVED;
 //        printf("PCF %f \t", pointCollectionFunction(points[i], L, N, 1.0f, 0.0f));
     }
     
-    *up = sqrtf(((float) numberDelays / (M_PI * totalSurfaceArea)) * hInt  * ENERGYREDUCTIONDIFREB);
+    *up = sqrtf(((float) numberDelays / (M_PI * totalSurfaceArea)) * hInt);
     
 }
 
@@ -94,32 +95,27 @@ void Gains::monteCarloBeta(Vector3D *points, Vector3D L, Vector3D S, Vector3D N,
         float R = reflectionKernel(points[i], L, S, N, 1.0f);
 //        printf("Point : %f %f %f \t",points[i].x, points[i].y, points[i].z );
 //             printf("beta R %f point %f %f %f \n ", h,points[i].x, points[i].y, points[i].z);
-        hRInt += (area * h * R)/(float)numPoints;
+        hRInt += (area * h * R)/(float)numPoints * ENERGYRECEIVED;
     }
     
      *beta = sqrtf(dmin*dmin * hRInt);
     
 }
 
-float Gains::phongBRDF(Vector3D S, Vector3D L, Vector3D N){
-
-    float cosAlpha = getDirectionVector(S, N).normalize().dotProduct(N);
-    if(cosAlpha < 0.0f){
-        cosAlpha = 0.0f;
-    }
-    
-    float n = NSPECULAR;
-    
-    float normalisationEnergy = lookUpNormalizationEnergyTerm(S);
-    
-   // return (kD * 1.f/M_PI) + kS * (n+2.f)/(2*M_PI) * powf(cosAlpha, n);
-        return (KD * 1.f/(M_PI))* ENERGYREDUCTIONDIF  + normalisationEnergy * powf(cosAlpha, n) * KS;
-}
-
-
-Vector3D Gains::getDirectionVector(Vector3D S, Vector3D N){
-    return N.scalarMult(2*S.normalize().dotProduct(N)).subtract(S.normalize());
-}
+//float Gains::phongBRDF(Vector3D S, Vector3D L, Vector3D N){
+//
+//    float cosAlpha = getDirectionVector(S, N).normalize().dotProduct(N);
+//    if(cosAlpha < 0.0f){
+//        cosAlpha = 0.0f;
+//    }
+//    
+//    float n = NSPECULAR;
+//    
+//    float normalisationEnergy = lookUpNormalizationEnergyTerm(S);
+//    
+//   // return (kD * 1.f/M_PI) + kS * (n+2.f)/(2*M_PI) * powf(cosAlpha, n);
+//        return (KD * 1.f/(M_PI))* ENERGYREDUCTIONDIF  + normalisationEnergy * powf(cosAlpha, n) * KS;
+//}
 
 
 
@@ -168,10 +164,9 @@ float Gains::calculateGains(Plane3D *surfaces, Vector3D L, Vector3D S){
 
     vDSP_vdiv(upsilon, 1, beta, 1, mu, 1, numberDelays);
     
-    //Dont divide by feedbackTapGains?
+    //Dont divide by feedbackTapGains? Yes
     vDSP_vdiv(feedbackTapGains, 1, mu, 1, mu, 1, numberDelays);
 
-    
     
 //    std::sort(mu, mu+numberDelays);
 //
@@ -185,8 +180,10 @@ float Gains::calculateGains(Plane3D *surfaces, Vector3D L, Vector3D S){
     printf("Sumbeta: %f sumUp: %f \n", sumbeta, sumup);
 //
     for (int i = 0; i< numberDelays; i++){
+        mu[i] *= powf(-1, rand()%2);
+        upsilon[i] *=powf(-1, rand()%2);
         totalInputEnergy += mu[i] * mu[i];
-       // printf("%f \n", mu[i]);
+//        printf("%f \n", mu[i]);
     }
     
     printf("Total Input Energy: %f \n", totalInputEnergy);
@@ -210,14 +207,18 @@ void Gains::getGains(float *inputGains, float *outputGains){
 //        int random_int = rand();
 //        
 //        if(random_int%2 == 0)
-//        inputGains[i] = mu[i];
+//            inputGains[i] = mu[i];
 //        
 //        else
 //            inputGains[i] = mu[i] * -1.f;
+//        
 //        outputGains[i] = upsilon[i];
-        
+//
         inputGains[i] = mu[i];
         outputGains[i] = upsilon[i];
+        
+//        printf("total gain : %f \n", inputGains[i] * outputGains[i]);
+        
     }
 }
 
@@ -229,26 +230,26 @@ void Gains::cartesianToSpherical(Vector3D x, float *angles){
     angles[1] = acosf(x.normalize().x / sqrtf(powf(x.normalize().x, 2)+ powf(x.normalize().x, 2)));
 }
 
-float Gains::lookUpNormalizationEnergyTerm(Vector3D S){
-    
-    
-    //get the theta
-    float* angles = new float[2];
-    cartesianToSpherical(S, angles);
-    
-
-    
-    int numberbinsTheta = THETASEGMENTATION;
-
-    
-
-    //check the bin
-
-    int quotientTheta = floorf(angles[0] / (M_PI/2.0f/float(numberbinsTheta))) ;
-
-    
-    
-    return brdfPhong.SpecularBRDFnormalization[quotientTheta];
-
-}
+//float Gains::lookUpNormalizationEnergyTerm(Vector3D S){
+//    
+//    
+//    //get the theta
+//    float* angles = new float[2];
+//    cartesianToSpherical(S, angles);
+//    
+//
+//    
+//    int numberbinsTheta = THETASEGMENTATION;
+//
+//    
+//
+//    //check the bin
+//
+//    int quotientTheta = floorf(angles[0] / (M_PI/2.0f/float(numberbinsTheta))) ;
+//
+//    
+//    
+//    return brdfPhong.SpecularBRDFnormalization[quotientTheta];
+//
+//}
 
