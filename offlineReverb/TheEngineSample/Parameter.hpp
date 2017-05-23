@@ -15,27 +15,7 @@
 #include <math.h>
 
 
-//
-//
-//#define INITIALROOMSIZE 0.186f
-//#define INITIALWIDTH 1.0f
-//
-//#define INITIALLENGTH 1.0f
-//
-//#define INITIALSOUNDX 0.5f
-//#define INITIALSOUNDY 0.6f
-//
-//#define INITIALLISTENERX 0.5f
-//#define INITIALLISTENERY 0.5f
-//
-//#define INITIALRT60 1.0f
 #define RADIUSOFHEAD 0.08f //8cm radius of head
-//#define ROOMSIZE 30.f //30 metres max
-//
-//#define ROOMCEILING 3.0f
-//#define INITIALDIRECTGAIN 1.f ///(4.f*M_PI);
-//#define INITIALREVERBGAIN 1.f ///(4.f*M_PI);
-//
 
 
 
@@ -74,16 +54,13 @@ typedef struct Parameter {
         
         
 //WATCH DMIN AND ENERGY DETECTED BY LISTENER
-        
         //offline Version
-        this->RT60 = 3.4f;
-        this->roomWidth = 10.f; //x
-        this->roomHeight = 16.f; //y
-        this->roomCeiling = 4.3f; //z
-        this->listenerLoc =Vector3D(5.f, 6.25f, 0.3f);
-        this->soundSourceLoc =  Vector3D(5.f, 9.5f,0.3f);
-        
-
+        this->RT60 = 1.65f;
+        this->roomWidth = 1.89f; //x
+        this->roomHeight = 5.58f; //y
+        this->roomCeiling = 3.f; //z
+        this->soundSourceLoc = Vector3D(1.59f,  roomHeight/2.f + 0.45f, 1.7f);
+        this->listenerLoc = Vector3D(1.69f, roomHeight/2.f-0.45f,1.7f);
         
         this->listenerLocLeftEar = Vector3D(cosf(orientation * M_PI / 180.f)*(- RADIUSOFHEAD) + sinf(orientation * M_PI / 180.f)*0.0f + listenerLoc.x, cosf(orientation * M_PI / 180.f)*0.0f-sinf(orientation * M_PI / 180.f)*(- RADIUSOFHEAD) + listenerLoc.y, listenerLoc.z);
         

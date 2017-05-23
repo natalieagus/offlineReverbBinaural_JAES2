@@ -11,9 +11,8 @@
 using namespace std;
 
 
+//Even subdivision
 void Cuboid::sliceCube(int slices){
-    
-
     int toSlice = 0;
     
     while(true){
@@ -27,11 +26,11 @@ void Cuboid::sliceCube(int slices){
         
         }
     
-//    printf("toSlice is : %d\n" , toSlice);
     segmentCube(toSlice*toSlice);
     
     int cubicTiles = 6*toSlice*toSlice;
     Plane3D* newSegmentedSides = new Plane3D[slices];
+    
     //copy into newSegmentedSides
     for (int i = 0; i<cubicTiles; i++){
         newSegmentedSides[i] = Plane3D(segmentedSides[i].corner, segmentedSides[i].S1, segmentedSides[i].S2);
@@ -73,14 +72,15 @@ void Cuboid::sliceCube(int slices){
     
     free(newSegmentedSides);
     
-//    
-    for (int i = 0; i<(slices); i++){
-        printf("{{%f, %f, %f}, {%f, %f, %f}, {%f, %f, %f}},", segmentedSides[i].corner.x, segmentedSides[i].corner.y, segmentedSides[i].corner.z, segmentedSides[i].S1.x , segmentedSides[i].S1.y, segmentedSides[i].S1.z, segmentedSides[i].S2.x, segmentedSides[i].S2.y, segmentedSides[i].S2.z );
-    }
-    
-    
+////    
+//    for (int i = 0; i<(slices); i++){
+//        printf("{{%f, %f, %f}, {%f, %f, %f}, {%f, %f, %f}},", segmentedSides[i].corner.x, segmentedSides[i].corner.y, segmentedSides[i].corner.z, segmentedSides[i].S1.x , segmentedSides[i].S1.y, segmentedSides[i].S1.z, segmentedSides[i].S2.x, segmentedSides[i].S2.y, segmentedSides[i].S2.z );
+//    }
 }
 
+
+
+//Even Segmentations
 void Cuboid::segmentCube(int tilesPerSide){
     
     //Make sure tilesPerSide can be exactly square-rooted
@@ -134,43 +134,6 @@ void Cuboid::segmentCube(int tilesPerSide){
     
 }
 
-float Cuboid::segmentCubeOnce(int d){
-    //segment floor and ceiling
-    dimensions = d;
-    
-    int index = 0;
-    for (int k = 0; k <2; k++){
-        Plane3D plane = sides[k];
-        
-        Vector3D s1 = plane.S1.scalarMult((float)1/dimensions);
-        Vector3D s2 = plane.S2.scalarMult((float)1/dimensions);
-        
-        for(int i = 0; i<dimensions; i++){
-            for (int j = 0; j<dimensions; j++){
-                //Get the corner
-                Vector3D c = plane.corner.add(plane.S1.scalarMult((float)j/dimensions));
-                c = c.add(plane.S2.scalarMult((float)i/dimensions));
-                
-                segmentedSides[index] = Plane3D(c,s1,s2);
-                segmentedSides[index].normal = plane.normal;
-                index = index + 1;
-            }
-        }
-    }
-    
-    for (int k = 2; k<6; k++){
-        
-        //get the plane
-        Plane3D plane = sides[k];
-        
-        segmentedSides[index] = plane;
-        index ++;
-    }
-    
-    return index;
-    
-    
-}
 
 float Cuboid::segmentCubeOnce(){
     //segment floor and ceiling
@@ -194,14 +157,10 @@ float Cuboid::segmentCubeOnce(){
 void Cuboid::segmentCubeBasedOnProjectedArea(int numDelays, Vector3D S, Vector3D L){
     segmentedSides = new Plane3D[numDelays];
     
-    
     elements = numDelays;
     
-    
-  //  int index = segmentCubeOnce(3);
     int index = segmentCubeOnce();
     
-   // int delaysCeilingFloor = (2*3*3);
     int delaysCeilingFloor = 0;
     
     while(index<numDelays){
@@ -212,19 +171,13 @@ void Cuboid::segmentCubeBasedOnProjectedArea(int numDelays, Vector3D S, Vector3D
         
         for (int i = delaysCeilingFloor; i<index; i++){
 
-            //add is better
-//            float comparisonValue =   fabs(ProjectedArea_rectangleSubDiv(segmentedSides[i], L, 1));
             float comparisonValue = segmentedSides[i].getMidpoint().distance(L);
 
-           // printf("%d subdivided ? \n ", segmentedSides[i].subdivided);
             if (comparisonValue > maxArea && segmentedSides[i].subdivided < 4){
                 maxArea = comparisonValue;
                 maxIndex = i;
             }
-            
-//            else if (segmentedSides[i].subdivided >= 5){
-//                printf("SUBDIVIDED TOO MUCH... \n");
-//            }
+
         }
         
         int randNum = rand()%100;
@@ -256,27 +209,14 @@ void Cuboid::segmentCubeBasedOnProjectedArea(int numDelays, Vector3D S, Vector3D
         //split that patch
         index = dividePlane(segmentedSides[maxIndex], index, maxIndex, S, L);
         
-     //   index = dividePlaneAlongS1(segmentedSides[maxIndex], index, maxIndex);
         
     }
     
-//    printf("Index is finally: %d \n", index);
     for (int i = 0; i<(index); i++){
         printf("{{%f, %f, %f}, {%f, %f, %f}, {%f, %f, %f}},", segmentedSides[i].corner.x, segmentedSides[i].corner.y, segmentedSides[i].corner.z, segmentedSides[i].S1.x , segmentedSides[i].S1.y, segmentedSides[i].S1.z, segmentedSides[i].S2.x, segmentedSides[i].S2.y, segmentedSides[i].S2.z );
     }
-////
-}
 
-//
-////NEED CHANGES
-//float Cuboid::projectedAreaOfAPlane(Vector3D S, Vector3D L, Plane3D patch){
-//    // (projectedArea(An,L) + projectedArea(An,S)) / delayLength^2
-// //   float areaAnL = patch.getArea() * fabs(L.normalize().dotProduct(patch.normal)) / powf(L.distance(patch.getMidpoint()), 2);
-//    //float areaAnS = patch.getArea() * fabs(S.normalize().dotProduct(patch.normal)) / powf(S.distance(patch.getMidpoint()), 2);
-//    float delayLength = S.distance(patch.getMidpoint()) + L.distance(patch.getMidpoint());
-//    return 1 / powf(delayLength, 2);
-//  //  return patch.getArea() * fabs(S.normalize().dotProduct(patch.normal)) * (1.f/powf(S.distance(patch.getMidpoint()),2));
-//}
+}
 
 
 int Cuboid::dividePlaneAlongS1(Plane3D divide, int index, int sourceIndex){
@@ -300,26 +240,12 @@ int Cuboid::dividePlane(Plane3D divide, int index, int sourceIndex, Vector3D S, 
     Vector3D omegaS2L = L.subtract(divide.corner.add(divide.S2.scalarMult(0.5))).normalize();
     Vector3D omegaS2S = S.subtract(divide.corner.add(divide.S2.scalarMult(0.5))).normalize();
     float projectedLengthS2 = divide.S2.magnitude() * omegaS2L.dotProduct(divide.normal) + divide.S2.magnitude() * omegaS2S.dotProduct(divide.normal);
-//    
-//    //project S1 into omega
-//    float projectedAreaS1 = omega.normalize().scalarMult( divide.S1.dotProduct(omega)).magnitude();
-//    //project S2 into omega
-//    float projectedAreaS2 = omega.normalize().scalarMult( divide.S2.dotProduct(omega)).magnitude();
-//    
-//    
-//    
-//    
+ 
     Vector3D c2 = divide.corner.add(divide.S1.scalarMult(0.5));
     Vector3D s1 = divide.S1.scalarMult(0.5);
     Vector3D c22 = divide.corner.add(divide.S2.scalarMult(0.5));
     Vector3D s2 = divide.S2.scalarMult(0.5);
 
-//    float projectedAreaS1 = fabs(ProjectedArea_rectangleSubDiv(Plane3D(divide.corner, s1, divide.S2), L, 2)) * fabs(ProjectedArea_rectangleSubDiv(Plane3D(divide.corner, s1, divide.S2), S, 2))  + fabs(ProjectedArea_rectangleSubDiv(Plane3D(c2, s1, divide.S2), L, 2)) * fabs(ProjectedArea_rectangleSubDiv(Plane3D(c2, s1, divide.S2), S, 2));
-//
-//
-//    float projectedAreaS2 = fabs(ProjectedArea_rectangleSubDiv(Plane3D(divide.corner, divide.S1, s2), L, 2)) * fabs(ProjectedArea_rectangleSubDiv(Plane3D(divide.corner, divide.S1, s2), S, 2)) + fabs(ProjectedArea_rectangleSubDiv(Plane3D(c22, divide.S1, s2), L, 2)) * fabs(ProjectedArea_rectangleSubDiv(Plane3D(c22, divide.S1, s2), S, 2));
-//    
-//  
 
     if (projectedLengthS1 > projectedLengthS2){
         //divide along S1

@@ -39,7 +39,7 @@ FDN: a feedback delay network reverberator
 
 //#define CENTIMETRESTOMETRES 0.01f
 //#define CENTIMETRESTOMETRESSQ CENTIMETRESTOMETRES*CENTIMETRESTOMETRES
-#define CHANNELS 8
+#define CHANNELS 12
 
 using namespace std;
 
@@ -73,6 +73,12 @@ public:
     void processReverb(float* pInput, float* pOutputL, float* pOutputR);
     
 protected:
+    
+    
+    
+    float channelToAngleLeftEar(size_t channel);
+    float channelToAngleRightEar(size_t channel);
+    
     
     float listenerOrientation;
     
@@ -144,6 +150,8 @@ protected:
 //    void setDelayTimes();
 
     
+    float scaledNewInput[TOTALDELAYS];
+    
     //To handle direct Rays
     SingleTapDelay directRays[2];
     void setDirectSingleTapDelay();
@@ -156,7 +164,9 @@ protected:
     void setDirectRayAngles();
     size_t determineChannel(float x, float y, float orientation);
     size_t angleToChannel(float angleInDegrees);
-    float channelToAngle(size_t channel);
+//    float channelToAngleHRTF(size_t channel);
+    
+    
     float channeltoangleNormal(size_t channel);
     //setting tankout of 8 channels
     void processTankOut(float fdnTankOut[CHANNELS]);

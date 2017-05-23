@@ -19,7 +19,7 @@
 
 
 #define DMIN 0.2f
-
+#define ENERGYRECEIVED 1.f
 //change them to make the first order reflections lose energy if you have to.
 #define NUM_MONTECARLO 50
 #define KD 1.0f
@@ -59,15 +59,9 @@ typedef struct Gains{
     float pointCollectionFunction(Vector3D x, Vector3D L, Vector3D N, float visibility, float absorption);
     float reflectionKernel(Vector3D x, Vector3D L, Vector3D S, Vector3D N, float visibility);
     Vector3D Lambda(Vector3D u, Vector3D x);
-//    float phongBRDF(Vector3D S, Vector3D L, Vector3D N);
     void getGains(float* inputGains, float* outputGains);
-    
-
-    
     void cartesianToSpherical(Vector3D x, float* angles);
-    
-//    float lookUpNormalizationEnergyTerm(Vector3D S);
-    
+
     //variables
     float dmin;
     float totalSurfaceArea;
@@ -81,8 +75,7 @@ typedef struct Gains{
     
     float totalInputEnergy;
     float correctInputEnergy;
-    
-//    energyTerm brdfPhong;
+
     
     
 }Gains;

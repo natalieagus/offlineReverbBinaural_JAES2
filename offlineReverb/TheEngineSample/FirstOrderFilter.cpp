@@ -39,9 +39,9 @@ void FirstOrderFilter::setAngle(float theta, float fc, bool right){
 //    theta = theta + 90.0f;
 //    printf("theta %f \n", theta);
     
-    if (theta >= 360.f){
-        theta -= 360.f;
-    }
+//    if (theta >= 360.f){
+//        theta -= 360.f;
+//    }
     
     float theta0 = 150.0f ;
     float alfa_min = 0.1f ;
