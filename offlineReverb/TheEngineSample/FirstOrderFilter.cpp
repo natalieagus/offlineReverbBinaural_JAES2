@@ -24,24 +24,9 @@ float FirstOrderFilter::process(float sample){
     return out;
 }
 
-// angle is 0 at 12 o'clock and positive numbers count clockwise
-//a0 is always 1
-//right then -100
+//Theta input has to be between 0 to 180 and 0 to -180
 void FirstOrderFilter::setAngle(float theta, float fc, bool right){
-//    // set a1, b0, b1
-//   // float initTheta = theta;
-    
-    
-   //  if ((theta >= 0.f and theta <= 170.f) or (theta <= 0.f and theta >= -170.f))
-    //  if (theta >= -150.f and theta <= 150.f)
-//    theta = -theta + 90.f;
-    
-//    theta = theta + 90.0f;
 //    printf("theta %f \n", theta);
-    
-//    if (theta >= 360.f){
-//        theta -= 360.f;
-//    }
     
     float theta0 = 150.0f ;
     float alfa_min = 0.1f ;
@@ -53,29 +38,6 @@ void FirstOrderFilter::setAngle(float theta, float fc, bool right){
     b0 = (alfa+w0/fc)/(1.0+w0/fc);
     b1 = (-alfa+w0/fc)/(1.0+w0/fc);
     a1 = -(1.0-w0/fc)/(1.0+w0/fc);
-    //printf("Theta: %f, b0 %f b1 %f a0 1 a1 %f\n", initTheta, b0,b1,a1);
-
-//
-//    theta =  theta / 180.0f * M_PI;
-//    float alpha_min = 0.1f;
-//    float c = 334.f; //% speed of sound
-//    float a = 0.08f;// % radius of head
-//    float theta_min = 5.0 * M_PI / 6.0;
-//    float T = 1.0 / fc;
-//    float w0 = c/a;
-//    float alpha = (1.f + alpha_min / 2.f) + (1.f - alpha_min/2.f) * cos (theta / theta_min * M_PI);
-//    float i = alpha / (T * w0);
-//    float j = 1.f / (w0 * T);
-////    float coeff_1 = alpha * tao * 2 /T;
-////    float coeff_2 = tao * 2 / T;
-//    
-//    float a0 = 1 + j;
-//
-//    b0 =( 1 + i)/a0;
-//    b1 = (1 - i)/a0;
-//
-//    a1 = (1 - j)/a0;
-//    
 }
 
 // See Digital Filters for Everyone by Rusty Allred 2.3.10

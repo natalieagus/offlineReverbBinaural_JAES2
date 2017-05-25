@@ -73,11 +73,9 @@ public:
     void processReverb(float* pInput, float* pOutputL, float* pOutputR);
     
 protected:
-    
-    
-    
-    float channelToAngleLeftEar(size_t channel);
-    float channelToAngleRightEar(size_t channel);
+
+    float convertAzimuthToLeftEar(float azimuth);
+    float convertAzimuthToRightEar(float azimuth);
     
     
     float listenerOrientation;
@@ -160,7 +158,7 @@ protected:
     void processDirectRaysDelay(float* input, float* directRaysOutput);
     
     //To do channel angle calculations
-    void setDelayChannels();
+    void setDelayOutputChannels();
     void setDirectRayAngles();
     size_t determineChannel(float x, float y, float orientation);
     size_t angleToChannel(float angleInDegrees);

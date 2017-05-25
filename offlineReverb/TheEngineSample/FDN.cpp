@@ -118,7 +118,7 @@ void FDN::setParameterSafe(Parameter params)
     ///************************************************////
     ///*********Setting Delay Angles ******************////
     ///************************************************////
-    setDelayChannels();
+    setDelayOutputChannels();
 
 
     ///************************************************////
@@ -351,8 +351,13 @@ inline void FDN::processReverb(float* pInput, float* pOutputL, float* pOutputR)
     vDSP_sve(fdnTankOutLeft, 1, &reverbOut[0], CHANNELS);
     vDSP_sve(fdnTankOutRight, 1, &reverbOut[1], CHANNELS);
 
-    *pOutputL = (directRaysOutput[0]+ reverbOut[0]);
-    *pOutputR = (directRaysOutput[1]+ reverbOut[1]);
+    //Direct Rays 
+    *pOutputL = (directRaysOutput[0]);
+    *pOutputR = (directRaysOutput[1]);
+   
+    //Reverb
+    *pOutputL += reverbOut[0];
+    *pOutputR += reverbOut[1];
     
     
     
@@ -797,6 +802,17 @@ void FDN::setDirectRayAngles()
     float angleInDegrees = atan2(xDiff, yDiff) * 180.0f / M_PI - parametersFDN.orientation;
 
    
+    //switch to 360.f
+    
+    //Make it between 0 to 360
+    if (fabs(angleInDegrees - 0.0f)<0.0001){
+        angleInDegrees = 0.0f;
+    }
+    
+    if (angleInDegrees < 0.0f ){
+        angleInDegrees = 360.f + angleInDegrees;
+    }
+    
     directRayAngles[0] = angleInDegrees;
     
     float yDiff2, xDiff2;
@@ -804,7 +820,15 @@ void FDN::setDirectRayAngles()
     xDiff2 = parametersFDN.soundSourceLoc.x - parametersFDN.listenerLocRightEar.x;
     float angleInDegrees2 = atan2(xDiff2, yDiff2) * 180.0f / M_PI - parametersFDN.orientation;
     
-
+    //Make it between 0 to 360
+    if (fabs(angleInDegrees2 - 0.0f)<0.0001){
+        angleInDegrees2 = 0.0f;
+    }
+    
+    if (angleInDegrees2 < 0.0f ){
+        angleInDegrees2 = 360.f + angleInDegrees2;
+    }
+    
     directRayAngles[1] = angleInDegrees2;
     
     printf("directRayAngle L %f R %f \n", directRayAngles[0], directRayAngles[1]);
@@ -898,7 +922,7 @@ void FDN::calculateAdditionalDelays(){
             }
             additionalDelays[i] = d;
         }
-         printf("DELAY ADDITIONAL : %f samples \n", additionalDelays[i]*44100);
+//         printf("DELAY ADDITIONAL : %f samples \n", additionalDelays[i]*44100);
         reverbDelays[i].setTimeSafe(additionalDelays[i]);
     }
     
@@ -913,7 +937,7 @@ float FDN::channeltoangleNormal(size_t channel){
 ///************************************************////
 ///********Binaural Functions************************////
 ///************************************************////
-void FDN::setDelayChannels(){
+void FDN::setDelayOutputChannels(){
     for (size_t i = 0; i < TOTALDELAYS-SMOOTHDELAY ; i++){
         delayTimesChannel[i] = determineChannel(Room.segmentedSides[i].getMidpoint().x, Room.segmentedSides[i].getMidpoint().y, listenerOrientation);
     }
@@ -936,31 +960,66 @@ void FDN::setFilters(){
 //        float angle = channelToAngle(i);
 //        printf("i %d Channel to Angle : %f \n", i,angle);
         
-        leftEarFilter[i].setAngle(channelToAngleLeftEar(i), SAMPLINGRATEF, false);
-        rightEarFilter[i].setAngle(channelToAngleRightEar(i), SAMPLINGRATEF, true);
+        leftEarFilter[i].setAngle(convertAzimuthToLeftEar(channeltoangleNormal(i)), SAMPLINGRATEF, false);
+        rightEarFilter[i].setAngle(convertAzimuthToRightEar(channeltoangleNormal(i)), SAMPLINGRATEF, true);
     }
     
-    directRayFilter[0].setAngle(directRayAngles[0]+90.f, SAMPLINGRATEF,false);
-    directRayFilter[1].setAngle(directRayAngles[1]-90.f, SAMPLINGRATEF, true);
+    directRayFilter[0].setAngle(convertAzimuthToLeftEar(directRayAngles[0]), SAMPLINGRATEF,false);
+    directRayFilter[1].setAngle(convertAzimuthToRightEar(directRayAngles[1]), SAMPLINGRATEF, true);
     
 }
 
 
-float FDN::channelToAngleLeftEar(size_t channel){
+//float FDN::angleLeftEarAllAzimuth(float azimuth){
+//    
+////    //azimuth between 0 to 360
+////    float azimuth = channeltoangleNormal(channel);
+////    
+//    //this one will be 0 to 90
+//    if(270.f<= azimuth and azimuth <360.f){
+//        printf("left ear all az %f \n", 360.f - azimuth);
+//        return 360.f - azimuth;
+//    }
+//    
+//    printf("left ear all az %f \n", azimuth + 90.f);
+//    return azimuth + 90.f;
+//    
+//    
+//}
+//
+//
+//float FDN::angleRightEarAllAzimuth(float azimuth){
+//    
+////    //azimuth between 0 to 360
+////    float azimuth = channeltoangleNormal(channel);
+////    
+//    //this one will be 270 to 360
+//    if(0<= azimuth and azimuth < 90.f){
+//        printf("right ear all az %f\n", 360.f - azimuth);
+//        return 360.f - azimuth;
+//    }
+//    
+//    printf("right ear all az %f \n", azimuth - 90.f);
+//    return azimuth - 90.f;
+//    
+//}
+
+
+float FDN::convertAzimuthToLeftEar(float azimuth){
     
-    //azimuth between 0 to 360
-    float azimuth = channeltoangleNormal(channel);
-    
+//    //azimuth between 0 to 360
+//    float azimuth = channeltoangleNormal(channel);
+//    
+    //change azimuth to be between 0 to 180 and 0 to -180
     if (azimuth >= 360.f){
         azimuth -= 360.f;
     }
     
-    //change azimuth to be between 0 to 180 and 0 to -180
     if (azimuth > 180.f){
         azimuth = azimuth - 360.f;
     }
     
-    if(azimuth > 90.f and azimuth < 180.f){
+    if(azimuth > 90.f and azimuth <= 180.f){
         float leftEarAngle = azimuth + 90.f - 360.f;
         return leftEarAngle;
     }
@@ -970,23 +1029,24 @@ float FDN::channelToAngleLeftEar(size_t channel){
     
 }
 
-float FDN::channelToAngleRightEar(size_t channel){
+float FDN::convertAzimuthToRightEar(float azimuth){
     
-    //azimuth between 0 to 360
-    float azimuth = channeltoangleNormal(channel);
-    
+//    //azimuth between 0 to 360
+//    float azimuth = channeltoangleNormal(channel);
+//    
+    //change azimuth to be between 0 to 180 and 0 to -180
     if (azimuth >= 360.f){
         azimuth -= 360.f;
     }
     
-    //change azimuth to be between 0 to 180 and 0 to -180
+
     if (azimuth > 180.f){
         azimuth = azimuth - 360.f;
     }
     
-    if(azimuth > -180.f and azimuth < -90.f){
-        float leftEarAngle = azimuth - 90.f + 360.f;
-        return leftEarAngle;
+    if(azimuth >= -180.f and azimuth < -90.f){
+        float rightEarAngle = azimuth - 90.f + 360.f;
+        return rightEarAngle;
     }
     
     return azimuth - 90.f;
@@ -996,7 +1056,8 @@ float FDN::channelToAngleRightEar(size_t channel){
 
 //Input is angleInDegrees in Azimuth form
 size_t FDN::angleToChannel(float angleInDegrees){
-
+    
+    //Make it between 0 to 360
     if (fabs(angleInDegrees - 0.0f)<0.0001){
         angleInDegrees = 0.0f;
     }
@@ -1012,7 +1073,8 @@ size_t FDN::angleToChannel(float angleInDegrees){
     return channel;
 }
 
-//azimuth is clockwise 0 to 360 degree, p. 149 DAFX
+
+//azimuth is clockwise 0 to 180 degree right, 0 to -180 left, p. 149 DAFX
 size_t FDN::determineChannel(float x,float y, float orientation){
     float xL = parametersFDN.listenerLoc.x;
     float yL = parametersFDN.listenerLoc.y;
@@ -1020,10 +1082,32 @@ size_t FDN::determineChannel(float x,float y, float orientation){
     float xDistance = x - xL;
     float yDistance = y - yL;
     
+    //Special cases
+    if (fabs(yDistance - 0.00001) < 0.0f){
+        // zero y, can be at 90 or -90
+        if (xDistance >= 0){
+            return angleToChannel(90.f);
+        }
+        else{
+            return angleToChannel(-90.f);
+        }
+    }
+    
+    if (fabs(xDistance - 0.00001) < 0.0f){
+        //zero x, can be at 0 or 180;
+        if (yDistance >= 0){
+            return angleToChannel(0.f);
+        }
+        else{
+            return angleToChannel(180.f);
+        }
+    }
+    
+    //Normal case
     //x over y because we want azimuth
     float angle2 = atan2f(xDistance, yDistance) * 180.0f / M_PI;
 
-//    printf("Angle %f \n", angle2);
+    //printf("Angle %f \n", angle2);
 
     return angleToChannel(angle2);
     
