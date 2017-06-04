@@ -62,6 +62,7 @@ void Gains::monteCarloBeta(Vector3D *points, Vector3D L, Vector3D S, Vector3D N,
     //Integrate h * R over the surface patch
     float hRInt = 0.0f;
     for (int i = 0; i<numPoints; i++){
+        printf("points  %f %f %f \n", points[i].x, points[i].y, points[i].z);
         float h = pointCollectionFunction(points[i], L, N, 1.0f, ALPHA);
         float R = reflectionKernel(points[i], L, S, N, 1.0f);
         hRInt += (area * h * R)/(float)numPoints * ENERGYRECEIVED;
@@ -86,16 +87,25 @@ float Gains::calculateGains(Plane3D *surfaces, Vector3D L, Vector3D S){
         mu[i] = 0.0f;
     }
     
+    Vector3D points [NUM_MONTECARLO];
+    
     printf("Number delays : %d \n", numberDelays);
     for (int i = 0; i < numberDelays; i++){
-        Vector3D points [NUM_MONTECARLO];
+
         Vector3D c = surfaces[i].corner;
         Vector3D s1 = surfaces[i].S1;
         Vector3D s2 = surfaces[i].S2;
 
         randomPointsOnRectangle(c, s1, s2, points, NUM_MONTECARLO);
+//        printf("\n\n ");
+//        for (int k = 0; k<NUM_MONTECARLO; k++){
+//            printf("{%f, %f, %f},", points[k].x, points[k].y, points[k].z );
+//        }
+        
+                printf("Surfaces %f %f %f, %f %f %f, %f %f %f \n", surfaces[i].corner.x, surfaces[i].corner.y, surfaces[i].corner.z, surfaces[i].S1.x, surfaces[i].S1.y, surfaces[i].S1.z, surfaces[i].S2.x,surfaces[i].S2.y, surfaces[i].S2.z  );
         monteCarloUpsilon(points, L, S, surfaces[i].normal, NUM_MONTECARLO, &upsilon[i], surfaces[i].getArea());
         monteCarloBeta(points, L, S, surfaces[i].normal, NUM_MONTECARLO, &beta[i], surfaces[i].getArea());
+        printf("i: %d Beta %f \n", i, beta[i]);
     }
     
 
@@ -113,8 +123,8 @@ float Gains::calculateGains(Plane3D *surfaces, Vector3D L, Vector3D S){
     printf("Sumbeta: %f sumUp: %f \n", sumbeta, sumup);
 
     for (int i = 0; i< numberDelays; i++){
-        mu[i] *= powf(-1, rand()%2);
-        upsilon[i] *=powf(-1, rand()%2);
+//        mu[i] *= powf(-1, rand()%2);
+//        upsilon[i] *=powf(-1, rand()%2);
         totalInputEnergy += mu[i] * mu[i];
     }
     

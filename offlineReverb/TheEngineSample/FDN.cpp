@@ -34,9 +34,7 @@ void FDN::initialise(bool powerSaveMode){
 
 
 void FDN::impulseResponse(long numSamples, std::ofstream* outputFileLeft, std::ofstream* outputFileRight){
-    
-    
-    clock_t begin = clock();
+
     
     float input;
     
@@ -58,10 +56,6 @@ void FDN::impulseResponse(long numSamples, std::ofstream* outputFileLeft, std::o
         *outputFileRight << right << ",";
         
     }
-    
-    clock_t end = clock();
-    double elapsed_msecs = double(end - begin) / CLOCKS_PER_SEC * 1000.f;
-    printf("Time elapsed: %f ms\n", elapsed_msecs);
     
     *outputFileLeft << "\n";
     *outputFileRight << "\n";
@@ -881,15 +875,22 @@ void FDN::setTempPoints(){
                 if (pointArray[j].x >= 0){
                     tempPoints[i].x = pointArray[j].x + w;
                     tempPoints[i].y = pointArray[j].y + h;
+                    tempPoints[i].z = parametersFDN.listenerLoc.z;
                 }
                 else{
                     tempPoints[i+CHANNELS/2].x = pointArray[j].x + w;
                     tempPoints[i+CHANNELS/2].y = pointArray[j].y + h;
+                    tempPoints[i+CHANNELS/2].z = parametersFDN.listenerLoc.z;
                 }
             }
         }
     }
     
+//    for (int i = 0; i<CHANNELS; i++){
+////        tempPoints[i].z = lLoc.z; //set to be leveled
+//        printf("{%f, %f, %f},", tempPoints[i].x, tempPoints[i].y, tempPoints[i].z);
+//    }
+//    
     
     
 }
@@ -922,11 +923,11 @@ void FDN::calculateAdditionalDelays(){
             }
             additionalDelays[i] = d;
         }
-//         printf("DELAY ADDITIONAL : %f samples \n", additionalDelays[i]*44100);
+         printf("DELAY ADDITIONAL : %f samples \n", additionalDelays[i]*44100);
         reverbDelays[i].setTimeSafe(additionalDelays[i]);
     }
     
-    }
+}
 
 float FDN::channeltoangleNormal(size_t channel){
     float channelWidth = 360.0f / (float)CHANNELS;

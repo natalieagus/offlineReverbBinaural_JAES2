@@ -54,16 +54,16 @@ typedef struct Parameter {
         
         
 //WATCH DMIN AND ENERGY DETECTED BY LISTENER
+        //offline Version
+        this->RT60 = 0.87f;
+        this->roomWidth = 10.8f; //x
+        this->roomHeight = 10.9f; //y
+        this->roomCeiling = 3.5f; //z
+        this->listenerLoc = Vector3D(2.f, 0.5f, 1.2f);
+        this->soundSourceLoc = Vector3D(4.f, 0.5+9.79,1.2f);
+
 
         
-        //offline Version
-        this->RT60 = 1.65f;
-        this->roomWidth = 1.89f; //x
-        this->roomHeight = 5.58f; //y
-        this->roomCeiling = 3.f; //z
-        this->soundSourceLoc = Vector3D(1.59f,  roomHeight/2.f + 0.45f, 1.7f);
-        this->listenerLoc = Vector3D(1.69f, roomHeight/2.f-0.45f,1.7f);
-
         this->listenerLocLeftEar = Vector3D(cosf(orientation * M_PI / 180.f)*(- RADIUSOFHEAD) + sinf(orientation * M_PI / 180.f)*0.0f + listenerLoc.x, cosf(orientation * M_PI / 180.f)*0.0f-sinf(orientation * M_PI / 180.f)*(- RADIUSOFHEAD) + listenerLoc.y, listenerLoc.z);
         
         this->listenerLocRightEar =  Vector3D(cosf(orientation * M_PI / 180.f)*(+ RADIUSOFHEAD) + sinf(orientation * M_PI / 180.f)*0.0f + listenerLoc.x, cosf(orientation * M_PI / 180.f)*0.0f-sinf(orientation * M_PI / 180.f)*(+ RADIUSOFHEAD) + listenerLoc.y, listenerLoc.z);;
