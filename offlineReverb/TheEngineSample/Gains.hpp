@@ -18,7 +18,7 @@
 //#import "energyTerm.hpp"
 
 
-#define DMIN 1.f
+
 #define ENERGYRECEIVED 1.f
 //change them to make the first order reflections lose energy if you have to.
 #define NUM_MONTECARLO 50

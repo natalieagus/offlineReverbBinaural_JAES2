@@ -16,7 +16,7 @@
 
 
 #define RADIUSOFHEAD 0.08f //8cm radius of head
-
+#define DMIN 0.2f
 
 
 //#define ENERGY_BALANCE
@@ -54,14 +54,17 @@ typedef struct Parameter {
         
         
 //WATCH DMIN AND ENERGY DETECTED BY LISTENER
+        
+        
         //offline Version
-        this->RT60 = 0.87f;
+        this->RT60 = 0.88f;
         this->roomWidth = 10.8f; //x
         this->roomHeight = 10.9f; //y
         this->roomCeiling = 3.5f; //z
-        this->listenerLoc = Vector3D(2.f, 0.5f, 1.2f);
-        this->soundSourceLoc = Vector3D(4.f, 0.5+9.79,1.2f);
+        this->listenerLoc = Vector3D(1.5f,1.5f, 1.2f);
+        this->soundSourceLoc = Vector3D(8.5f, 8.5f,1.2f);
 
+        
 
         
         this->listenerLocLeftEar = Vector3D(cosf(orientation * M_PI / 180.f)*(- RADIUSOFHEAD) + sinf(orientation * M_PI / 180.f)*0.0f + listenerLoc.x, cosf(orientation * M_PI / 180.f)*0.0f-sinf(orientation * M_PI / 180.f)*(- RADIUSOFHEAD) + listenerLoc.y, listenerLoc.z);
